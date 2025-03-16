@@ -64,16 +64,16 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 func (h *LinkHandler) GoTo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		shortID := r.URL.Path[len("/links/"):]
-		if shortID == "" {
-			log.Printf("[Handler] не удалось найти хеш %s", shortID)
+		hash := r.URL.Path[len("/links/"):]
+		if hash == "" {
+			log.Printf("[Handler] не удалось найти хеш %s", hash)
 			http.Error(w, "Hash не указан", http.StatusBadRequest)
 			return
 		}
 
-		originalURL, err := h.Service.GetByHash(ctx, shortID)
+		originalURL, err := h.Service.GetByHash(ctx, hash)
 		if err != nil {
-			log.Printf("[Handler] Ошибка редиректа %s: %v", shortID, err)
+			log.Printf("[Handler] Ошибка редиректа %s: %v", hash, err)
 			http.Error(w, "URL-адрес не найден", http.StatusNotFound)
 			return
 		}
