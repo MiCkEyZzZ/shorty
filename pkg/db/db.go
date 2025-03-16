@@ -2,10 +2,11 @@ package db
 
 import (
 	"fmt"
-	"shorty/internal/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"shorty/internal/config"
 )
 
 type DB struct {
