@@ -1,0 +1,142 @@
+package link
+
+import (
+	"log"
+	"net/http"
+	"strconv"
+
+	"gorm.io/gorm"
+
+	"shorty/internal/config"
+	"shorty/internal/models"
+	"shorty/internal/service"
+	"shorty/pkg/req"
+	"shorty/pkg/res"
+)
+
+// LinkHandlerDeps - зависимости для создания экземпляра LinkHandler
+type LinkHandlerDeps struct {
+	*config.Config
+	Service *service.LinkService
+}
+
+type LinkHandler struct {
+	*config.Config
+	Service *service.LinkService
+}
+
+// NewLinkHandler создает новый экземпляр LinkHandler
+func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
+	handler := &LinkHandler{
+		Config:  deps.Config,
+		Service: deps.Service,
+	}
+	router.HandleFunc("POST /links", handler.Create())
+	router.HandleFunc("GET /links/{hash}", handler.GoTo())
+	router.HandleFunc("PATCH /links/{id}", handler.Update())
+	router.HandleFunc("DELETE /links/{id}", handler.Delete())
+}
+
+// Create - создание сокращённого URL.
+func (h *LinkHandler) Create() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		body, err := req.HandleBody[LinkCreateRequest](&w, r)
+		if err != nil {
+			log.Printf("[Handler] Ошибка обработки тела запроса: %v", err)
+			http.Error(w, "не удалось обработать тело запроса", http.StatusBadRequest)
+			return
+		}
+
+		link := models.NewLink(body.URL)
+		newLink, err := h.Service.Create(ctx, link)
+		if err != nil {
+			log.Printf("[Handler] Ошибка создания ссылки: %v", err)
+			http.Error(w, "не удалось создать сокращённый URL", http.StatusBadRequest)
+			return
+		}
+
+		res.Json(w, newLink, http.StatusOK)
+	}
+}
+
+// Redirect - редирект на оригинальный URL.
+func (h *LinkHandler) GoTo() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		shortID := r.URL.Path[len("/links/"):]
+		if shortID == "" {
+			log.Printf("[Handler] не удалось найти хеш %s", shortID)
+			http.Error(w, "Hash не указан", http.StatusBadRequest)
+			return
+		}
+
+		originalURL, err := h.Service.GetByHash(ctx, shortID)
+		if err != nil {
+			log.Printf("[Handler] Ошибка редиректа %s: %v", shortID, err)
+			http.Error(w, "URL-адрес не найден", http.StatusNotFound)
+			return
+		}
+		http.Redirect(w, r, originalURL.Url, http.StatusTemporaryRedirect)
+	}
+}
+
+// Update - обновление сокращённого URL.
+func (h *LinkHandler) Update() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		body, err := req.HandleBody[LinkUpdateRequest](&w, r)
+		if err != nil {
+			log.Printf("[Handler] Ошибка обработки тела запроса: %v", err)
+			http.Error(w, "не удалось обработать тело запроса", http.StatusBadRequest)
+			return
+		}
+		rid := r.PathValue("id")
+		id, err := strconv.ParseUint(rid, 10, 32)
+		if err != nil {
+			log.Printf("[Handler] Некорректный ID: %v", err)
+			http.Error(w, "Некорректный ID", http.StatusBadRequest)
+			return
+		}
+		link, err := h.Service.Update(ctx, &models.Link{
+			Model: gorm.Model{ID: uint(id)},
+			Url:   body.URL,
+			Hash:  body.Hash,
+		})
+		if err != nil {
+			log.Printf("[Handler] Ошибка обновления ссылки (ID: %d): %v", id, err)
+			http.Error(w, "Не удалось обновить ссылку", http.StatusBadRequest)
+			return
+		}
+
+		res.Json(w, link, http.StatusOK)
+	}
+}
+
+// Delete - удаление сокращённого URL.
+func (h *LinkHandler) Delete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		rid := r.PathValue("id")
+		id, err := strconv.ParseUint(rid, 10, 32)
+		if err != nil {
+			log.Printf("[Handler] Некорректный ID: %v", err)
+			http.Error(w, "Некорректный ID", http.StatusBadRequest)
+			return
+		}
+		_, err = h.Service.FindByID(ctx, uint(id))
+		if err != nil {
+			log.Printf("[Handler] Попытка удалить несуществующую ссылку (ID: %d)", id)
+			http.Error(w, "Ссылка с таким ID не найдена", http.StatusNotFound)
+			return
+		}
+		err = h.Service.Delete(ctx, uint(id))
+		if err != nil {
+			log.Printf("[Handler] Ошибка удаления ссылки (ID: %d): %v", id, err)
+			http.Error(w, "Не удалось удалить ссылку", http.StatusInternalServerError)
+			return
+		}
+		log.Printf("[Handler] Ссылка (ID: %d) успешно удалена", id)
+		res.Json(w, map[string]string{"message": "Ссылка удалена"}, http.StatusOK)
+	}
+}
