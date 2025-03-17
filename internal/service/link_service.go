@@ -32,7 +32,7 @@ func NewLinkService(repo *repository.LinkRepository) *LinkService {
 func (s *LinkService) Create(ctx context.Context, link *models.Link) (*models.Link, error) {
 	newLink, err := s.repo.CreateLink(ctx, link)
 	if err != nil {
-		log.Printf("[Service] Ошибка при создании ссылки: %v", err)
+		log.Printf("[LinkService] Ошибка при создании ссылки: %v", err)
 		return nil, fmt.Errorf("%w: %v", ErrLinkCreation, err)
 	}
 	return newLink, nil
@@ -45,7 +45,7 @@ func (s *LinkService) GetByHash(ctx context.Context, hash string) (*models.Link,
 		if err.Error() == "record not found" {
 			return nil, fmt.Errorf("%w: хеш %s", ErrLinkNotFound, hash)
 		}
-		log.Printf("[Service] Ошибка получения ссылки по хешу %s: %v", hash, err)
+		log.Printf("[LinkService] Ошибка получения ссылки по хешу %s: %v", hash, err)
 		return nil, fmt.Errorf("не удалось найти ссылку с хешем %s: %w", hash, err)
 	}
 	return link, nil
@@ -55,7 +55,7 @@ func (s *LinkService) GetByHash(ctx context.Context, hash string) (*models.Link,
 func (s *LinkService) Update(ctx context.Context, link *models.Link) (*models.Link, error) {
 	updatedLink, err := s.repo.UpdateLink(ctx, link)
 	if err != nil {
-		log.Printf("[Service] Ошибка при обновлении ссылки (ID: %d): %v", link.ID, err)
+		log.Printf("[LinkService] Ошибка при обновлении ссылки (ID: %d): %v", link.ID, err)
 		return nil, fmt.Errorf("%w: %v", ErrLinkUpdate, err)
 	}
 	return updatedLink, nil
@@ -65,7 +65,7 @@ func (s *LinkService) Update(ctx context.Context, link *models.Link) (*models.Li
 func (s *LinkService) Delete(ctx context.Context, id uint) error {
 	err := s.repo.DeleteLink(ctx, id)
 	if err != nil {
-		log.Printf("[Service] Ошибка удаления ссылки (ID: %d): %v", id, err)
+		log.Printf("[LinkService] Ошибка удаления ссылки (ID: %d): %v", id, err)
 		return fmt.Errorf("%w: %v", ErrLinkDeletion, err)
 	}
 	return nil
@@ -75,7 +75,7 @@ func (s *LinkService) Delete(ctx context.Context, id uint) error {
 func (s *LinkService) FindByID(ctx context.Context, id uint) (*models.Link, error) {
 	link, err := s.repo.FindLinkByID(ctx, id)
 	if err != nil {
-		log.Printf("[Service] Ошибка при поиске ссылки (ID: %d): %v", id, err)
+		log.Printf("[LinkService] Ошибка при поиске ссылки (ID: %d): %v", id, err)
 		if err.Error() == fmt.Sprintf("ссылка с ID %d не найдена", id) {
 			return nil, ErrLinkNotFound
 		}

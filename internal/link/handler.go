@@ -10,6 +10,7 @@ import (
 	"shorty/internal/config"
 	"shorty/internal/models"
 	"shorty/internal/service"
+	"shorty/pkg/middleware"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
 )
@@ -33,7 +34,7 @@ func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	}
 	router.HandleFunc("POST /links", handler.Create())
 	router.HandleFunc("GET /links/{hash}", handler.GoTo())
-	router.HandleFunc("PATCH /links/{id}", handler.Update())
+	router.Handle("PATCH /links/{id}", middleware.IsAuth(handler.Update()))
 	router.HandleFunc("DELETE /links/{id}", handler.Delete())
 }
 
@@ -41,9 +42,9 @@ func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 func (h *LinkHandler) Create() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		body, err := req.HandleBody[LinkCreateRequest](&w, r)
+		body, err := req.HandleBody[CreateLinkRequest](&w, r)
 		if err != nil {
-			log.Printf("[Handler] Ошибка обработки тела запроса: %v", err)
+			log.Printf("[LinkHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "не удалось обработать тело запроса", http.StatusBadRequest)
 			return
 		}
@@ -51,7 +52,7 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 		link := models.NewLink(body.URL)
 		newLink, err := h.Service.Create(ctx, link)
 		if err != nil {
-			log.Printf("[Handler] Ошибка создания ссылки: %v", err)
+			log.Printf("[LinkHandler] Ошибка создания ссылки: %v", err)
 			http.Error(w, "не удалось создать сокращённый URL", http.StatusBadRequest)
 			return
 		}
@@ -66,14 +67,14 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 		ctx := r.Context()
 		hash := r.URL.Path[len("/links/"):]
 		if hash == "" {
-			log.Printf("[Handler] не удалось найти хеш %s", hash)
+			log.Printf("[LinkHandler] не удалось найти хеш %s", hash)
 			http.Error(w, "Hash не указан", http.StatusBadRequest)
 			return
 		}
 
 		originalURL, err := h.Service.GetByHash(ctx, hash)
 		if err != nil {
-			log.Printf("[Handler] Ошибка редиректа %s: %v", hash, err)
+			log.Printf("[LinkHandler] Ошибка редиректа %s: %v", hash, err)
 			http.Error(w, "URL-адрес не найден", http.StatusNotFound)
 			return
 		}
@@ -85,16 +86,16 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 func (h *LinkHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		body, err := req.HandleBody[LinkUpdateRequest](&w, r)
+		body, err := req.HandleBody[UpdateLinkRequest](&w, r)
 		if err != nil {
-			log.Printf("[Handler] Ошибка обработки тела запроса: %v", err)
+			log.Printf("[LinkHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "не удалось обработать тело запроса", http.StatusBadRequest)
 			return
 		}
 		rid := r.PathValue("id")
 		id, err := strconv.ParseUint(rid, 10, 32)
 		if err != nil {
-			log.Printf("[Handler] Некорректный ID: %v", err)
+			log.Printf("[LinkHandler] Некорректный ID: %v", err)
 			http.Error(w, "Некорректный ID", http.StatusBadRequest)
 			return
 		}
@@ -104,7 +105,7 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 			Hash:  body.Hash,
 		})
 		if err != nil {
-			log.Printf("[Handler] Ошибка обновления ссылки (ID: %d): %v", id, err)
+			log.Printf("[LinkHandler] Ошибка обновления ссылки (ID: %d): %v", id, err)
 			http.Error(w, "Не удалось обновить ссылку", http.StatusBadRequest)
 			return
 		}
@@ -120,23 +121,23 @@ func (h *LinkHandler) Delete() http.HandlerFunc {
 		rid := r.PathValue("id")
 		id, err := strconv.ParseUint(rid, 10, 32)
 		if err != nil {
-			log.Printf("[Handler] Некорректный ID: %v", err)
+			log.Printf("[LinkHandler] Некорректный ID: %v", err)
 			http.Error(w, "Некорректный ID", http.StatusBadRequest)
 			return
 		}
 		_, err = h.Service.FindByID(ctx, uint(id))
 		if err != nil {
-			log.Printf("[Handler] Попытка удалить несуществующую ссылку (ID: %d)", id)
+			log.Printf("[LinkHandler] Попытка удалить несуществующую ссылку (ID: %d)", id)
 			http.Error(w, "Ссылка с таким ID не найдена", http.StatusNotFound)
 			return
 		}
 		err = h.Service.Delete(ctx, uint(id))
 		if err != nil {
-			log.Printf("[Handler] Ошибка удаления ссылки (ID: %d): %v", id, err)
+			log.Printf("[LinkHandler] Ошибка удаления ссылки (ID: %d): %v", id, err)
 			http.Error(w, "Не удалось удалить ссылку", http.StatusInternalServerError)
 			return
 		}
-		log.Printf("[Handler] Ссылка (ID: %d) успешно удалена", id)
+		log.Printf("[LinkHandler] Ссылка (ID: %d) успешно удалена", id)
 		res.Json(w, map[string]string{"message": "Ссылка удалена"}, http.StatusOK)
 	}
 }

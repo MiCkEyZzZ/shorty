@@ -29,7 +29,7 @@ func NewLinkRepository(db *db.DB) *LinkRepository {
 func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).Create(link)
 	if res.Error != nil {
-		log.Printf("[Repository] Ошибка создания ссылки: %v", res.Error)
+		log.Printf("[LinkRepository] Ошибка создания ссылки: %v", res.Error)
 		return nil, fmt.Errorf("ошибка при сохранении ссылки в БД: %w", res.Error)
 	}
 	return link, nil
@@ -40,7 +40,7 @@ func (r *LinkRepository) GetLinkByHash(ctx context.Context, hash string) (*model
 	var link models.Link
 	res := r.Database.DB.WithContext(ctx).First(&link, "hash = ?", hash)
 	if res.Error != nil {
-		log.Printf("[Repository] Ошибка поиска ссылки: %v", res.Error)
+		log.Printf("[LinkRepository] Ошибка поиска ссылки: %v", res.Error)
 		return nil, res.Error
 	}
 
@@ -51,7 +51,7 @@ func (r *LinkRepository) GetLinkByHash(ctx context.Context, hash string) (*model
 func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).Clauses(clause.Returning{}).Updates(link)
 	if res.Error != nil {
-		log.Printf("[Repository] Ошибка обновления ссылки (ID: %d): %v", link.ID, res.Error)
+		log.Printf("[LinkRepository] Ошибка обновления ссылки (ID: %d): %v", link.ID, res.Error)
 		return nil, fmt.Errorf("ошибка при обновлении ссылки в БД: %w", res.Error)
 	}
 	return link, nil
@@ -61,7 +61,7 @@ func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*mo
 func (r *LinkRepository) DeleteLink(ctx context.Context, id uint) error {
 	res := r.Database.DB.WithContext(ctx).Delete(&models.Link{}, id)
 	if res.Error != nil {
-		log.Printf("[Repository] Ошибка удаления ссылки (ID: %d): %v", id, res.Error)
+		log.Printf("[LinkRepository] Ошибка удаления ссылки (ID: %d): %v", id, res.Error)
 		return fmt.Errorf("ошибка при удалении ссылки из БД: %w", res.Error)
 	}
 	return nil
@@ -73,10 +73,10 @@ func (r *LinkRepository) FindLinkByID(ctx context.Context, id uint) (*models.Lin
 	res := r.Database.DB.WithContext(ctx).First(&link, id)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			log.Printf("[Repository] Ссылка с ID %d не найдена", id)
+			log.Printf("[LinkRepository] Ссылка с ID %d не найдена", id)
 			return nil, fmt.Errorf("ссылка с ID %d не найдена", id)
 		}
-		log.Printf("[Repository] Ошибка при поиске ссылки (ID: %d): %v", id, res.Error)
+		log.Printf("[LinkRepository] Ошибка при поиске ссылки (ID: %d): %v", id, res.Error)
 		return nil, fmt.Errorf("ошибка при поиске ссылки: %w", res.Error)
 	}
 

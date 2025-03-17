@@ -19,5 +19,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	db.AutoMigrate(&models.Link{})
+	// db.Migrator().DropTable(&models.User{})
+	// db.Migrator().DropTable(&models.Link{})
+	db.AutoMigrate(&models.Link{}, &models.User{})
 }

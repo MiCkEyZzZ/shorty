@@ -1,12 +1,12 @@
 package link
 
-// LinkCreateRequest - структура для создания новой сокращенной ссылки.
-type LinkCreateRequest struct {
+// CreateLinkRequest - структура для создания новой сокращенной ссылки.
+type CreateLinkRequest struct {
 	URL string `json:"url" validate:"required,url"`
 }
 
-// LinkUpdateRequest - структура для обновления сокращенной ссылки.
-type LinkUpdateRequest struct {
+// UpdateLinkRequest - структура для обновления сокращенной ссылки.
+type UpdateLinkRequest struct {
 	URL  string `json:"url" validate:"required,url"`
 	Hash string `json:"hash"`
 }

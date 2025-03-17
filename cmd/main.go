@@ -9,6 +9,7 @@ import (
 	"shorty/internal/link"
 	"shorty/internal/repository"
 	"shorty/internal/service"
+	"shorty/internal/user"
 	"shorty/pkg/db"
 	"shorty/pkg/middleware"
 
@@ -24,33 +25,33 @@ func main() {
 		return
 	}
 
-	// Репохитории
+	// Репохитории.
 	linkRepository := repository.NewLinkRepository(db)
-	// userRepository := repository.NewUserRepository(db)
+	userRepository := repository.NewUserRepository(db)
 	// statRepository := repository.NewStatRepository(db)
 
-	// Сервисы
+	// Сервисы.
 	linkService := service.NewLinkService(linkRepository)
-	// userService := service.NewUserService(userRepository)
+	userService := service.NewUserService(userRepository)
+	authService := service.NewAuthService(userRepository)
 	// statService := service.NewStatService(statRepository)
 
-	// Обработчики
-	auth.NewAuthHandler(router, auth.AuthHandlerDeps{Config: cfg})
+	// Обработчики.
 	link.NewLinkHandler(router, link.LinkHandlerDeps{Config: cfg, Service: linkService})
-	// user.NewUserHandler(router, user.UserHandlerDeps{Config: cfg, Service: userService})
+	user.NewUserHandler(router, user.UserHandlerDeps{Config: cfg, Service: userService})
+	auth.NewAuthHandler(router, auth.AuthHandlerDeps{Config: cfg, Service: authService})
 	// stat.NewStatHandler(router, stat.StatHandlerDeps{Config: cfg, Service: statService})
 
-	// Middleware
-	middleware := middleware.Chain(
+	// Промежуточное ПО.
+	stack := middleware.Chain(
 		middleware.CORS,
 		middleware.Logging,
-		middleware.IsAuth,
 	)
 
-	// HTTP-сервер
+	// HTTP-сервер.
 	server := http.Server{
 		Addr:    ":8080",
-		Handler: middleware(router),
+		Handler: stack(router),
 	}
 
 	fmt.Println("Сервер запущен на http://localhost:8080")
