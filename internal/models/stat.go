@@ -1,5 +1,13 @@
 package models
 
+import (
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
+)
+
 type Stat struct {
-	ID uint64 `json:"id"`
+	gorm.Model
+	LinkID uint           `json:"link_id"`
+	Clicks int            `json:"clicks"`
+	Date   datatypes.Date `json:"date"`
 }

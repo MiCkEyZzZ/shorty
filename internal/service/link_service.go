@@ -41,6 +41,17 @@ func (s *LinkService) Create(ctx context.Context, link *models.Link) (*models.Li
 	return newLink, nil
 }
 
+// Count получает число страниц.
+func (s *LinkService) Count(ctx context.Context) int64 {
+	return s.repo.Count(ctx)
+}
+
+// GetLinks получает список ссылок.
+func (s *LinkService) GetLinks(ctx context.Context, limit, offset int) []models.Link {
+	links := s.repo.GetLinks(ctx, limit, offset)
+	return links
+}
+
 // GetByHash ищет сокращённую ссылку по её хешу.
 func (s *LinkService) GetByHash(ctx context.Context, hash string) (*models.Link, error) {
 	link, err := s.repo.GetLinkByHash(ctx, hash)
