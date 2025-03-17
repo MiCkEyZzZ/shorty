@@ -34,8 +34,18 @@ func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	}
 	router.HandleFunc("POST /links", handler.Create())
 	router.HandleFunc("GET /links/{hash}", handler.GoTo())
-	router.Handle("PATCH /links/{id}", middleware.IsAuth(handler.Update()))
+	router.Handle("PATCH /links/{id}", middleware.IsAuth(handler.Update(), deps.Config))
 	router.HandleFunc("DELETE /links/{id}", handler.Delete())
+}
+
+// parseID парсит идентификатор из строки в uint.
+func parseID(r *http.Request) (uint, error) {
+	rid := r.PathValue("id")
+	id, err := strconv.ParseUint(rid, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return uint(id), nil
 }
 
 // Create - создание сокращённого URL.
@@ -68,17 +78,17 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 		hash := r.URL.Path[len("/links/"):]
 		if hash == "" {
 			log.Printf("[LinkHandler] не удалось найти хеш %s", hash)
-			http.Error(w, "Hash не указан", http.StatusBadRequest)
+			http.Error(w, "hash не указан", http.StatusBadRequest)
 			return
 		}
 
-		originalURL, err := h.Service.GetByHash(ctx, hash)
+		link, err := h.Service.GetByHash(ctx, hash)
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка редиректа %s: %v", hash, err)
 			http.Error(w, "URL-адрес не найден", http.StatusNotFound)
 			return
 		}
-		http.Redirect(w, r, originalURL.Url, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, link.Url, http.StatusTemporaryRedirect)
 	}
 }
 
@@ -86,19 +96,20 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 func (h *LinkHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		id, err := parseID(r)
+		if err != nil {
+			log.Printf("[LinkHandler] Некорректный ID: %v", err)
+			http.Error(w, "некорректный ID", http.StatusBadRequest)
+			return
+		}
+
 		body, err := req.HandleBody[UpdateLinkRequest](&w, r)
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "не удалось обработать тело запроса", http.StatusBadRequest)
 			return
 		}
-		rid := r.PathValue("id")
-		id, err := strconv.ParseUint(rid, 10, 32)
-		if err != nil {
-			log.Printf("[LinkHandler] Некорректный ID: %v", err)
-			http.Error(w, "Некорректный ID", http.StatusBadRequest)
-			return
-		}
+
 		link, err := h.Service.Update(ctx, &models.Link{
 			Model: gorm.Model{ID: uint(id)},
 			Url:   body.URL,
@@ -106,7 +117,7 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 		})
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка обновления ссылки (ID: %d): %v", id, err)
-			http.Error(w, "Не удалось обновить ссылку", http.StatusBadRequest)
+			http.Error(w, "не удалось обновить ссылку", http.StatusBadRequest)
 			return
 		}
 
@@ -118,26 +129,27 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 func (h *LinkHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		rid := r.PathValue("id")
-		id, err := strconv.ParseUint(rid, 10, 32)
+		id, err := parseID(r)
 		if err != nil {
 			log.Printf("[LinkHandler] Некорректный ID: %v", err)
-			http.Error(w, "Некорректный ID", http.StatusBadRequest)
+			http.Error(w, "некорректный ID", http.StatusBadRequest)
 			return
 		}
+
 		_, err = h.Service.FindByID(ctx, uint(id))
 		if err != nil {
 			log.Printf("[LinkHandler] Попытка удалить несуществующую ссылку (ID: %d)", id)
-			http.Error(w, "Ссылка с таким ID не найдена", http.StatusNotFound)
+			http.Error(w, "ссылка с таким ID не найдена", http.StatusNotFound)
 			return
 		}
+
 		err = h.Service.Delete(ctx, uint(id))
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка удаления ссылки (ID: %d): %v", id, err)
-			http.Error(w, "Не удалось удалить ссылку", http.StatusInternalServerError)
+			http.Error(w, "ошибка сервера", http.StatusInternalServerError)
 			return
 		}
 		log.Printf("[LinkHandler] Ссылка (ID: %d) успешно удалена", id)
-		res.Json(w, map[string]string{"message": "Ссылка удалена"}, http.StatusOK)
+		res.Json(w, map[string]string{"message": "ссылка удалена"}, http.StatusOK)
 	}
 }

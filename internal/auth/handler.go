@@ -56,7 +56,7 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 			return
 		}
 
-		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(email)
+		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(jwt.JWTData{Email: email})
 		if err != nil {
 			log.Println("[AuthHandler] Ошибка при авторизации:", err)
 			http.Error(w, "ошибка при авторизации", http.StatusInternalServerError)
@@ -91,7 +91,7 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 			http.Error(w, "ошибка при авторизации", http.StatusUnauthorized)
 			return
 		}
-		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(email)
+		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(jwt.JWTData{Email: email})
 		if err != nil {
 			log.Println("[AuthHandler] Ошибка при авторизации:", err)
 			http.Error(w, "ошибка при авторизации", http.StatusInternalServerError)

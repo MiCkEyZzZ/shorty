@@ -35,11 +35,27 @@ func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*mo
 	return link, nil
 }
 
+func (r *LinkRepository) Count(ctx context.Context) int64 {
+	var count int64
+	r.Database.WithContext(ctx).Table("links").Where("deleted_at is null").Count(&count)
+	return count
+}
+
+// GetLinks получает список ссылок.
+func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) []models.Link {
+	var links []models.Link
+	r.Database.WithContext(ctx).Table("links").Where("deleted_at is null").Order("id asc").Limit(limit).Offset(offset).Scan(&links)
+	return links
+}
+
 // GetLinkByHash ищет ссылку в базе данных по её хешу.
 func (r *LinkRepository) GetLinkByHash(ctx context.Context, hash string) (*models.Link, error) {
 	var link models.Link
 	res := r.Database.DB.WithContext(ctx).First(&link, "hash = ?", hash)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		log.Printf("[LinkRepository] Ошибка поиска ссылки: %v", res.Error)
 		return nil, res.Error
 	}
@@ -59,6 +75,14 @@ func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*mo
 
 // DeleteLink удаляет ссылку из базы данных по её ID.
 func (r *LinkRepository) DeleteLink(ctx context.Context, id uint) error {
+	link, err := r.FindLinkByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if link == nil {
+		return fmt.Errorf("ссылка с ID %d не найдена", id)
+	}
+
 	res := r.Database.DB.WithContext(ctx).Delete(&models.Link{}, id)
 	if res.Error != nil {
 		log.Printf("[LinkRepository] Ошибка удаления ссылки (ID: %d): %v", id, res.Error)
