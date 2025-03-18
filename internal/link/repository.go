@@ -43,7 +43,13 @@ func (r *LinkRepository) Count(ctx context.Context) int64 {
 // GetLinks получает список ссылок.
 func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) []Link {
 	var links []Link
-	r.Database.WithContext(ctx).Table("links").Where("deleted_at is null").Order("id asc").Limit(limit).Offset(offset).Scan(&links)
+	r.Database.WithContext(ctx).
+		Table("links").
+		Where("deleted_at is null").
+		Order("id asc").
+		Limit(limit).
+		Offset(offset).
+		Scan(&links)
 	return links
 }
 
