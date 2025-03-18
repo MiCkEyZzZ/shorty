@@ -19,12 +19,12 @@ import (
 func main() {
 	cfg := config.NewConfig()
 	router := http.NewServeMux()
+	eventBus := event.NewEventBus()
 	db, err := db.NewDatabase(cfg)
 	if err != nil {
 		fmt.Printf("Не удалось подключиться к базе данных: %v", err)
 		return
 	}
-	eventBus := event.NewEventBus()
 
 	// Репозитории.
 	linkRepository := repository.NewLinkRepository(db)
@@ -35,10 +35,7 @@ func main() {
 	linkService := service.NewLinkService(linkRepository)
 	userService := service.NewUserService(userRepository)
 	authService := service.NewAuthService(userRepository)
-	statService := service.NewStatService(&service.StatServiceDeps{
-		EventBus: eventBus,
-		Repo:     statRepository,
-	})
+	statService := service.NewStatService(&service.StatServiceDeps{EventBus: eventBus, Repo: statRepository})
 
 	// Обработчики.
 	handler.NewLinkHandler(router, handler.LinkHandlerDeps{Config: cfg, Service: linkService, EventBus: eventBus})
