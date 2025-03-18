@@ -14,6 +14,6 @@ type UpdateLinkRequest struct {
 }
 
 type GetAllLinksResponse struct {
-	Links []models.Link `json:"url"`
 	Count int64         `json:"count"`
+	Links []models.Link `json:"url"`
 }

@@ -4,12 +4,14 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"gorm.io/gorm"
 
 	"shorty/internal/config"
 	"shorty/internal/models"
 	"shorty/internal/service"
+	"shorty/pkg/event"
 	"shorty/pkg/middleware"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
@@ -18,19 +20,22 @@ import (
 // LinkHandlerDeps - зависимости для создания экземпляра LinkHandler
 type LinkHandlerDeps struct {
 	*config.Config
-	Service *service.LinkService
+	Service  *service.LinkService
+	EventBus *event.EventBus
 }
 
 type LinkHandler struct {
 	*config.Config
-	Service *service.LinkService
+	Service  *service.LinkService
+	EventBus *event.EventBus
 }
 
 // NewLinkHandler создает новый экземпляр LinkHandler
 func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	handler := &LinkHandler{
-		Config:  deps.Config,
-		Service: deps.Service,
+		Config:   deps.Config,
+		Service:  deps.Service,
+		EventBus: deps.EventBus,
 	}
 	router.HandleFunc("POST /links", handler.Create())
 	router.HandleFunc("GET /links", handler.GetAll())
@@ -85,9 +90,9 @@ func (h *LinkHandler) GetAll() http.HandlerFunc {
 			http.Error(w, "Invalid offset", http.StatusBadRequest)
 			return
 		}
-		links := h.Service.GetLinks(ctx, limit, offset)
 		count := h.Service.Count(ctx)
-		res.Json(w, GetAllLinksResponse{Links: links, Count: count}, http.StatusOK)
+		links := h.Service.GetLinks(ctx, limit, offset)
+		res.Json(w, GetAllLinksResponse{Count: count, Links: links}, http.StatusOK)
 	}
 }
 
@@ -102,12 +107,35 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 			return
 		}
 
+		// Получаем ссылку по хешу
 		link, err := h.Service.GetByHash(ctx, hash)
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка редиректа %s: %v", hash, err)
 			http.Error(w, "URL-адрес не найден", http.StatusNotFound)
 			return
 		}
+
+		// Логируем переход в статистику
+		go func(linkID uint) {
+			timer := time.NewTimer(time.Second) // Таймаут 1 секунда
+			defer timer.Stop()
+
+			done := make(chan struct{}) // Канал завершения
+
+			go func() {
+				if err := h.EventBus.Publish(event.Event{Type: event.EventLinkVisited, Data: linkID}); err != nil {
+					log.Printf("[StatService] Ошибка записи клика (linkID: %d): %v", linkID, err)
+				}
+				close(done) // Закрываем канал по завершению
+			}()
+
+			select {
+			case <-done: // Успешная запись
+			case <-timer.C: // Таймаут
+				log.Printf("[StatService] Таймаут при записи клика (linkID: %d)", linkID)
+			}
+		}(link.ID)
+
 		http.Redirect(w, r, link.Url, http.StatusTemporaryRedirect)
 	}
 }
