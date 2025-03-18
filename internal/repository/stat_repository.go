@@ -8,7 +8,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
-	"shorty/internal/consts"
+	"shorty/internal/common"
 	"shorty/internal/models"
 	"shorty/internal/payload"
 	"shorty/pkg/db"
@@ -83,9 +83,9 @@ func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.
 
 	// Определяем группировку.
 	switch by {
-	case consts.GroupByDay:
+	case common.GroupByDay:
 		selectQuery = "to_char(date, 'YYYY-MM-DD') as period, sum(clicks)"
-	case consts.GroupByMonth:
+	case common.GroupByMonth:
 		selectQuery = "to_char(date, 'YYYY-MM') as period, sum(clicks)"
 	default:
 		log.Printf("[StatRepository] Неверное значение для группировки: %s", by)

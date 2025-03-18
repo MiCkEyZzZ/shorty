@@ -18,7 +18,7 @@ type Link struct {
 func NewLink(url string) *Link {
 	return &Link{
 		Url:  url,
-		Hash: generateHash(6),
+		Hash: generateHash(10),
 	}
 }
 
@@ -29,5 +29,5 @@ func generateHash(n int) string {
 		fmt.Println("Ошибка генерации случайных данных:", err)
 		return ""
 	}
-	return base64.URLEncoding.EncodeToString(bytes)
+	return base64.RawURLEncoding.EncodeToString(bytes)[:n]
 }

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"shorty/internal/common"
 	"shorty/internal/config"
-	"shorty/internal/consts"
 	"shorty/internal/service"
 	"shorty/pkg/res"
 )
@@ -41,7 +41,7 @@ func (h *StatHandler) GetStats() http.HandlerFunc {
 			return
 		}
 		by := r.URL.Query().Get("by")
-		if by != consts.GroupByDay && by != consts.GroupByMonth {
+		if by != common.GroupByDay && by != common.GroupByMonth {
 			http.Error(w, "Invalid by param", http.StatusBadRequest)
 			return
 		}

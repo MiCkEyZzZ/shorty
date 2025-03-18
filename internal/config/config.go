@@ -25,6 +25,7 @@ type Config struct {
 
 // NewConfig создаёт новый экземпляр конфигурации.
 func NewConfig() *Config {
+	// Загружаем .env (если есть)
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Предупреждение: файл .env не найден. Используются значения по умолчанию.")
