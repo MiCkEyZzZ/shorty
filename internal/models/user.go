@@ -1,8 +1,6 @@
-package user
+package models
 
-import (
-	"gorm.io/gorm"
-)
+import "gorm.io/gorm"
 
 // User структура произвольного пользователя.
 type User struct {

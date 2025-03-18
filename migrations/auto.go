@@ -2,14 +2,12 @@ package main
 
 import (
 	"os"
-	"os/user"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"shorty/internal/link"
-	"shorty/internal/stat"
+	"shorty/internal/models"
 )
 
 func main() {
@@ -23,5 +21,5 @@ func main() {
 	}
 	// db.Migrator().DropTable(&models.User{})
 	// db.Migrator().DropTable(&models.Link{})
-	db.AutoMigrate(&link.Link{}, &user.User{}, &stat.Stat{})
+	db.AutoMigrate(&models.Link{}, &models.User{}, &models.Stat{})
 }

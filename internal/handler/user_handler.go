@@ -1,4 +1,4 @@
-package user
+package handler
 
 import (
 	"log"
@@ -6,20 +6,22 @@ import (
 	"strconv"
 
 	"shorty/internal/config"
+	"shorty/internal/models"
+	"shorty/internal/service"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
 )
 
 // UserHandlerDeps - зависимости для создания экземпляра UserHandler
 type UserHandlerDeps struct {
-	*config.Config
-	Service *UserService
+	Config  *config.Config
+	Service *service.UserService
 }
 
 // UserHandler - обработчик для управления пользователями.
 type UserHandler struct {
-	*config.Config
-	Service *UserService
+	Config  *config.Config
+	Service *service.UserService
 }
 
 // NewUserHandler регистрирует маршруты, связанные с пользователями, и привязывает их к методам UserHandler.
@@ -38,7 +40,7 @@ func NewUserHandler(router *http.ServeMux, deps UserHandlerDeps) {
 func (h *UserHandler) FindAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		users, err := h.Service.FindAll(ctx)
+		users, err := h.Service.GetAll(ctx)
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка получения списка пользователей: %v", err)
 			http.Error(w, "Не удалось получить список пользователей", http.StatusInternalServerError)
@@ -59,7 +61,7 @@ func (h *UserHandler) FindByID() http.HandlerFunc {
 			http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
 			return
 		}
-		user, err := h.Service.FindByID(ctx, uint(id))
+		user, err := h.Service.GetByID(ctx, uint(id))
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка поиска пользователя (ID: %d): %v", id, err)
 			http.Error(w, "Пользователь не найден", http.StatusNotFound)
@@ -80,7 +82,7 @@ func (h *UserHandler) Update() http.HandlerFunc {
 			http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
 			return
 		}
-		body, err := req.HandleBody[User](&w, r)
+		body, err := req.HandleBody[models.User](&w, r)
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "Не удалось обработать тело запроса", http.StatusBadRequest)

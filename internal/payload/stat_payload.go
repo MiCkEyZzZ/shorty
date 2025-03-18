@@ -1,4 +1,4 @@
-package stat
+package payload
 
 type GetStatsResponse struct {
 	Period string `json:"period"`

@@ -1,4 +1,4 @@
-package link
+package handler
 
 import (
 	"log"
@@ -9,6 +9,9 @@ import (
 	"gorm.io/gorm"
 
 	"shorty/internal/config"
+	"shorty/internal/models"
+	"shorty/internal/payload"
+	"shorty/internal/service"
 	"shorty/pkg/event"
 	"shorty/pkg/middleware"
 	"shorty/pkg/req"
@@ -17,14 +20,14 @@ import (
 
 // LinkHandlerDeps - зависимости для создания экземпляра LinkHandler
 type LinkHandlerDeps struct {
-	*config.Config
-	Service  *LinkService
+	Config   *config.Config
+	Service  *service.LinkService
 	EventBus *event.EventBus
 }
 
 type LinkHandler struct {
-	*config.Config
-	Service  *LinkService
+	Config   *config.Config
+	Service  *service.LinkService
 	EventBus *event.EventBus
 }
 
@@ -42,28 +45,18 @@ func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	router.HandleFunc("DELETE /links/{id}", handler.Delete())
 }
 
-// parseID парсит идентификатор из строки в uint.
-func parseID(r *http.Request) (uint, error) {
-	rid := r.PathValue("id")
-	id, err := strconv.ParseUint(rid, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	return uint(id), nil
-}
-
 // Create - создание сокращённого URL.
 func (h *LinkHandler) Create() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		body, err := req.HandleBody[CreateLinkRequest](&w, r)
+		body, err := req.HandleBody[payload.CreateLinkRequest](&w, r)
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "не удалось обработать тело запроса", http.StatusBadRequest)
 			return
 		}
 
-		link := NewLink(body.URL)
+		link := models.NewLink(body.URL)
 		newLink, err := h.Service.Create(ctx, link)
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка создания ссылки: %v", err)
@@ -80,7 +73,7 @@ func (h *LinkHandler) GetAll() http.HandlerFunc {
 		ctx := r.Context()
 		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 		if err != nil {
-			http.Error(w, "Invalid limi", http.StatusBadRequest)
+			http.Error(w, "Invalid limit", http.StatusBadRequest)
 			return
 		}
 		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
@@ -88,9 +81,9 @@ func (h *LinkHandler) GetAll() http.HandlerFunc {
 			http.Error(w, "Invalid offset", http.StatusBadRequest)
 			return
 		}
-		count := h.Service.Count(ctx)
-		links := h.Service.GetLinks(ctx, limit, offset)
-		res.Json(w, GetAllLinksResponse{Count: count, Links: links}, http.StatusOK)
+		count, _ := h.Service.Count(ctx)
+		links, _ := h.Service.GetAll(ctx, limit, offset)
+		res.Json(w, payload.GetAllLinksResponse{Count: count, Links: links}, http.StatusOK)
 	}
 }
 
@@ -98,7 +91,7 @@ func (h *LinkHandler) GetAll() http.HandlerFunc {
 func (h *LinkHandler) GoTo() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		hash := r.URL.Path[len("/links/"):]
+		hash := r.PathValue("hash")
 		if hash == "" {
 			log.Printf("[LinkHandler] не удалось найти хеш %s", hash)
 			http.Error(w, "hash не указан", http.StatusBadRequest)
@@ -149,14 +142,14 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 			return
 		}
 
-		body, err := req.HandleBody[UpdateLinkRequest](&w, r)
+		body, err := req.HandleBody[payload.UpdateLinkRequest](&w, r)
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "не удалось обработать тело запроса", http.StatusBadRequest)
 			return
 		}
 
-		link, err := h.Service.Update(ctx, &Link{
+		link, err := h.Service.Update(ctx, &models.Link{
 			Model: gorm.Model{ID: uint(id)},
 			Url:   body.URL,
 			Hash:  body.Hash,
@@ -198,4 +191,14 @@ func (h *LinkHandler) Delete() http.HandlerFunc {
 		log.Printf("[LinkHandler] Ссылка (ID: %d) успешно удалена", id)
 		res.Json(w, map[string]string{"message": "ссылка удалена"}, http.StatusOK)
 	}
+}
+
+// parseID парсит идентификатор из строки в uint.
+func parseID(r *http.Request) (uint, error) {
+	rid := r.PathValue("id")
+	id, err := strconv.ParseUint(rid, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return uint(id), nil
 }

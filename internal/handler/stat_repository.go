@@ -1,36 +1,33 @@
-package stat
+package handler
 
 import (
 	"net/http"
 	"time"
 
 	"shorty/internal/config"
+	"shorty/internal/consts"
+	"shorty/internal/service"
 	"shorty/pkg/res"
-)
-
-const (
-	GroupByDay   = "day"
-	GroupByMonth = "month"
 )
 
 // StatHandlerDeps - зависимости для создания экземпляра StatHandler
 type StatHandlerDeps struct {
-	*config.Config
-	Service *StatService
+	Config  *config.Config
+	Service *service.StatService
 }
 
 type StatHandler struct {
-	Service *StatService
+	Service *service.StatService
 }
 
 func NewStatHandler(router *http.ServeMux, deps StatHandlerDeps) {
 	handler := StatHandler{
 		Service: deps.Service,
 	}
-	router.HandleFunc("GET /stats", handler.Getstats())
+	router.HandleFunc("GET /stats", handler.GetStats())
 }
 
-func (h *StatHandler) Getstats() http.HandlerFunc {
+func (h *StatHandler) GetStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		from, err := time.Parse("2006-01-02", r.URL.Query().Get("from"))
@@ -44,11 +41,11 @@ func (h *StatHandler) Getstats() http.HandlerFunc {
 			return
 		}
 		by := r.URL.Query().Get("by")
-		if by != GroupByDay && by != GroupByMonth {
+		if by != consts.GroupByDay && by != consts.GroupByMonth {
 			http.Error(w, "Invalid by param", http.StatusBadRequest)
 			return
 		}
-		stats := h.Service.GetAllStat(ctx, by, from, to)
+		stats := h.Service.GetStats(ctx, by, from, to)
 		res.Json(w, stats, http.StatusOK)
 	}
 }

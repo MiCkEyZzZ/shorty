@@ -1,4 +1,4 @@
-package user
+package payload
 
 // CreateRequest структура представляет запрос на создание нового пользователя.
 type CreateUserRequest struct {

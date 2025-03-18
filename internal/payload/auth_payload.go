@@ -1,6 +1,4 @@
-package auth
-
-import "shorty/internal/user"
+package payload
 
 // SigninRequest - представляет запрос на вход пользователя.
 type SigninRequest struct {
@@ -9,7 +7,7 @@ type SigninRequest struct {
 }
 
 // SignupRequest - представляет запрос на регистрацию нового пользователя.
-type SignupRequest = user.CreateUserRequest
+type SignupRequest = CreateUserRequest
 
 // SinginResponse - представляет ответ на запрос на вход пользователя.
 type SinginResponse struct {

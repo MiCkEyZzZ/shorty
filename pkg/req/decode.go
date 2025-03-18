@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-// Decod декодирует тело запроса в структуру T.
+// Decode декодирует тело запроса в структуру T.
 func Decode[T any](body io.ReadCloser) (T, error) {
 	var payload T
 	err := json.NewDecoder(body).Decode(&payload)

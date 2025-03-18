@@ -1,10 +1,12 @@
-package auth
+package handler
 
 import (
 	"log"
 	"net/http"
 
 	"shorty/internal/config"
+	"shorty/internal/payload"
+	"shorty/internal/service"
 	"shorty/pkg/jwt"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
@@ -12,14 +14,14 @@ import (
 
 // AuthHandlerDeps - зависимости для обработчика аутентификации.
 type AuthHandlerDeps struct {
-	*config.Config
-	Service *AuthService
+	Config  *config.Config
+	Service *service.AuthService
 }
 
 // AuthHandler - обработчик аутентификации.
 type AuthHandler struct {
-	*config.Config
-	Service *AuthService
+	Config  *config.Config
+	Service *service.AuthService
 }
 
 // NewAuthHandler - создание обработчика аутентификации.
@@ -41,7 +43,7 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 			return
 		}
 
-		body, err := req.HandleBody[SignupRequest](&w, r)
+		body, err := req.HandleBody[payload.SignupRequest](&w, r)
 		if err != nil {
 			log.Printf("[AuthHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "Некорректный запрос", http.StatusBadRequest)
@@ -61,7 +63,7 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 			http.Error(w, "ошибка при авторизации", http.StatusInternalServerError)
 			return
 		}
-		data := SignupResponse{
+		data := payload.SignupResponse{
 			Token: token,
 		}
 		res.Json(w, data, http.StatusOK)
@@ -77,7 +79,7 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 			return
 		}
 
-		body, err := req.HandleBody[SigninRequest](&w, r)
+		body, err := req.HandleBody[payload.SigninRequest](&w, r)
 		if err != nil {
 			log.Println("[AuthHandler] Ошибка при разборе тела запроса:", err)
 			http.Error(w, "Некорректный запрос", http.StatusBadRequest)
@@ -96,7 +98,7 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 			http.Error(w, "ошибка при авторизации", http.StatusInternalServerError)
 			return
 		}
-		data := SinginResponse{
+		data := payload.SinginResponse{
 			Token: token,
 		}
 		res.Json(w, data, http.StatusOK)

@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"shorty/internal/auth"
+	_ "github.com/lib/pq"
+
 	"shorty/internal/config"
-	"shorty/internal/link"
-	"shorty/internal/stat"
-	"shorty/internal/user"
+	"shorty/internal/handler"
+	"shorty/internal/repository"
+	"shorty/internal/service"
 	"shorty/pkg/db"
 	"shorty/pkg/event"
 	"shorty/pkg/middleware"
-
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -28,24 +27,24 @@ func main() {
 	eventBus := event.NewEventBus()
 
 	// Репозитории.
-	linkRepository := link.NewLinkRepository(db)
-	userRepository := user.NewUserRepository(db)
-	statRepository := stat.NewStatRepository(db)
+	linkRepository := repository.NewLinkRepository(db)
+	userRepository := repository.NewUserRepository(db)
+	statRepository := repository.NewStatRepository(db)
 
 	// Сервисы.
-	linkService := link.NewLinkService(linkRepository)
-	userService := user.NewUserService(userRepository)
-	authService := auth.NewAuthService(userRepository)
-	statService := stat.NewStatService(&stat.StatServiceDeps{
+	linkService := service.NewLinkService(linkRepository)
+	userService := service.NewUserService(userRepository)
+	authService := service.NewAuthService(userRepository)
+	statService := service.NewStatService(&service.StatServiceDeps{
 		EventBus: eventBus,
 		Repo:     statRepository,
 	})
 
 	// Обработчики.
-	link.NewLinkHandler(router, link.LinkHandlerDeps{Config: cfg, Service: linkService, EventBus: eventBus})
-	user.NewUserHandler(router, user.UserHandlerDeps{Config: cfg, Service: userService})
-	auth.NewAuthHandler(router, auth.AuthHandlerDeps{Config: cfg, Service: authService})
-	stat.NewStatHandler(router, stat.StatHandlerDeps{Config: cfg, Service: statService})
+	handler.NewLinkHandler(router, handler.LinkHandlerDeps{Config: cfg, Service: linkService, EventBus: eventBus})
+	handler.NewUserHandler(router, handler.UserHandlerDeps{Config: cfg, Service: userService})
+	handler.NewAuthHandler(router, handler.AuthHandlerDeps{Config: cfg, Service: authService})
+	handler.NewStatHandler(router, handler.StatHandlerDeps{Config: cfg, Service: statService})
 
 	// Промежуточное ПО.
 	stack := middleware.Chain(
