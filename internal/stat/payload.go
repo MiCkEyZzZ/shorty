@@ -1,5 +1,6 @@
 package stat
 
-type StatRequest struct{}
-
-type StatResponse struct{}
+type GetStatsResponse struct {
+	Period string `json:"period"`
+	Sum    string `json:"sum"`
+}

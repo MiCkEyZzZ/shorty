@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 
 	"shorty/internal/config"
-	"shorty/internal/models"
-	"shorty/internal/service"
 	"shorty/pkg/event"
 	"shorty/pkg/middleware"
 	"shorty/pkg/req"
@@ -20,13 +18,13 @@ import (
 // LinkHandlerDeps - зависимости для создания экземпляра LinkHandler
 type LinkHandlerDeps struct {
 	*config.Config
-	Service  *service.LinkService
+	Service  *LinkService
 	EventBus *event.EventBus
 }
 
 type LinkHandler struct {
 	*config.Config
-	Service  *service.LinkService
+	Service  *LinkService
 	EventBus *event.EventBus
 }
 
@@ -65,7 +63,7 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 			return
 		}
 
-		link := models.NewLink(body.URL)
+		link := NewLink(body.URL)
 		newLink, err := h.Service.Create(ctx, link)
 		if err != nil {
 			log.Printf("[LinkHandler] Ошибка создания ссылки: %v", err)
@@ -158,7 +156,7 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 			return
 		}
 
-		link, err := h.Service.Update(ctx, &models.Link{
+		link, err := h.Service.Update(ctx, &Link{
 			Model: gorm.Model{ID: uint(id)},
 			Url:   body.URL,
 			Hash:  body.Hash,

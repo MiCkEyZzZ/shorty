@@ -1,24 +1,24 @@
-package service
+package stat
 
 import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
-	"shorty/internal/repository"
 	"shorty/pkg/event"
 )
 
 var ErrInvalidLinkID = errors.New("неверный идентификатор ссылки")
 
 type StatServiceDeps struct {
+	Repo     *StatRepository
 	EventBus *event.EventBus
-	Repo     *repository.StatRepository
 }
 
 type StatService struct {
+	Repo     *StatRepository
 	EventBus *event.EventBus
-	Repo     *repository.StatRepository
 }
 
 func NewStatService(deps *StatServiceDeps) *StatService {
@@ -38,4 +38,8 @@ func (s *StatService) AddClick(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func (s *StatService) GetAllStat(ctx context.Context, by string, from, to time.Time) []GetStatsResponse {
+	return s.Repo.GetStats(ctx, by, from, to)
 }

@@ -1,4 +1,4 @@
-package repository
+package user
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"shorty/internal/models"
 	"shorty/pkg/db"
 )
 
@@ -24,7 +23,7 @@ func NewUserRepository(db *db.DB) *UserRepository {
 }
 
 // Create добавляет нового пользователя в базу данных
-func (r *UserRepository) Create(ctx context.Context, user *models.User) (*models.User, error) {
+func (r *UserRepository) Create(ctx context.Context, user *User) (*User, error) {
 	res := r.Database.WithContext(ctx).Create(user)
 	if res.Error != nil {
 		log.Printf("[UserRepository] Ошибка создания пользователя: %v", res.Error)
@@ -34,8 +33,8 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) (*models
 }
 
 // GetAll возвращает список всех пользователей
-func (r *UserRepository) FindAll(ctx context.Context) ([]*models.User, error) {
-	var users []*models.User
+func (r *UserRepository) FindAll(ctx context.Context) ([]*User, error) {
+	var users []*User
 	res := r.Database.WithContext(ctx).Find(&users)
 	if res.Error != nil {
 		log.Printf("[UserRepository] Ошибка при получении списка пользователей: %v", res.Error)
@@ -45,8 +44,8 @@ func (r *UserRepository) FindAll(ctx context.Context) ([]*models.User, error) {
 }
 
 // FindByID ищет пользователя по его ID
-func (r *UserRepository) FindByID(ctx context.Context, id uint) (*models.User, error) {
-	var user models.User
+func (r *UserRepository) FindByID(ctx context.Context, id uint) (*User, error) {
+	var user User
 	res := r.Database.WithContext(ctx).Find(&user, id)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -60,8 +59,8 @@ func (r *UserRepository) FindByID(ctx context.Context, id uint) (*models.User, e
 }
 
 // FindByEmail ищет пользователя по email
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models.User, error) {
-	var user models.User
+func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*User, error) {
+	var user User
 	res := r.Database.WithContext(ctx).Where("email = ?", email).First(&user)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -75,7 +74,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 }
 
 // Update обновляет данные пользователя в базе
-func (r *UserRepository) Update(ctx context.Context, user *models.User) (*models.User, error) {
+func (r *UserRepository) Update(ctx context.Context, user *User) (*User, error) {
 	res := r.Database.DB.WithContext(ctx).Clauses(clause.Returning{}).Updates(user)
 	if res.Error != nil {
 		log.Printf("[UserRepository] Ошибка обновления пользователя (ID: %d): %v", user.ID, res.Error)
@@ -86,7 +85,7 @@ func (r *UserRepository) Update(ctx context.Context, user *models.User) (*models
 
 // Delete удаляет пользователя по ID
 func (r *UserRepository) Delete(ctx context.Context, id uint) error {
-	res := r.Database.WithContext(ctx).Delete(&models.User{}, id)
+	res := r.Database.WithContext(ctx).Delete(&User{}, id)
 	if res.Error != nil {
 		log.Printf("[UserRepository] Ошибка удаления пользователя (ID: %d): %v", id, res.Error)
 		return fmt.Errorf("ошибка при удалении пользователя из БД: %w", res.Error)

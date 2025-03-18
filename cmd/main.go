@@ -8,8 +8,6 @@ import (
 	"shorty/internal/auth"
 	"shorty/internal/config"
 	"shorty/internal/link"
-	"shorty/internal/repository"
-	"shorty/internal/service"
 	"shorty/internal/stat"
 	"shorty/internal/user"
 	"shorty/pkg/db"
@@ -29,16 +27,16 @@ func main() {
 	}
 	eventBus := event.NewEventBus()
 
-	// Репохитории.
-	linkRepository := repository.NewLinkRepository(db)
-	userRepository := repository.NewUserRepository(db)
-	statRepository := repository.NewStatRepository(db)
+	// Репозитории.
+	linkRepository := link.NewLinkRepository(db)
+	userRepository := user.NewUserRepository(db)
+	statRepository := stat.NewStatRepository(db)
 
 	// Сервисы.
-	linkService := service.NewLinkService(linkRepository)
-	userService := service.NewUserService(userRepository)
-	authService := service.NewAuthService(userRepository)
-	statService := service.NewStatService(&service.StatServiceDeps{
+	linkService := link.NewLinkService(linkRepository)
+	userService := user.NewUserService(userRepository)
+	authService := auth.NewAuthService(userRepository)
+	statService := stat.NewStatService(&stat.StatServiceDeps{
 		EventBus: eventBus,
 		Repo:     statRepository,
 	})

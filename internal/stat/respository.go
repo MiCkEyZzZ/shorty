@@ -1,4 +1,4 @@
-package repository
+package stat
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
-	"shorty/internal/models"
 	"shorty/pkg/db"
 )
 
@@ -21,7 +20,7 @@ func NewStatRepository(db *db.DB) *StatRepository {
 }
 
 func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
-	var stat models.Stat
+	var stat Stat
 	currentDate := datatypes.Date(time.Now())
 
 	// Используем транзакцию для атомарности.
@@ -36,7 +35,7 @@ func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			// Если записи нет, то создаём.
-			stat = models.Stat{
+			stat = Stat{
 				LinkID: linkID,
 				Clicks: 1,
 				Date:   currentDate,
@@ -61,4 +60,23 @@ func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
 		}
 	}
 	return tx.Commit().Error
+}
+
+func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.Time) []GetStatsResponse {
+	var stats []GetStatsResponse
+	var selectQuery string
+	switch by {
+	case GroupByDay:
+		selectQuery = "to_char(date, 'YYYY-MM-DD') as period, sum(clicks)"
+	case GroupByMonth:
+		selectQuery = "to_char(date, 'YYYY-MM') as period, sum(clicks)"
+	}
+	r.Database.WithContext(ctx).
+		Table("stats").
+		Select(selectQuery).
+		Where("date BETWEEN ? AND ?", from, to).
+		Group("period").
+		Order("period").
+		Scan(&stats)
+	return stats
 }

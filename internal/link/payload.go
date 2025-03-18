@@ -1,7 +1,5 @@
 package link
 
-import "shorty/internal/models"
-
 // CreateLinkRequest - структура для создания новой сокращенной ссылки.
 type CreateLinkRequest struct {
 	URL string `json:"url" validate:"required,url"`
@@ -14,6 +12,6 @@ type UpdateLinkRequest struct {
 }
 
 type GetAllLinksResponse struct {
-	Count int64         `json:"count"`
-	Links []models.Link `json:"url"`
+	Count int64  `json:"count"`
+	Links []Link `json:"url"`
 }

@@ -1,4 +1,4 @@
-package service
+package auth
 
 import (
 	"context"
@@ -7,8 +7,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"shorty/internal/models"
-	"shorty/internal/repository"
+	"shorty/internal/user"
 )
 
 // Ошибки, связанные с работой авторизации.
@@ -20,11 +19,11 @@ var (
 
 // AuthService предоставляет методы для работы с авторизацией пользователей.
 type AuthService struct {
-	Repo *repository.UserRepository
+	Repo *user.UserRepository
 }
 
 // NewAuthService создаёт новый экземпляр AuthService.
-func NewAuthService(repo *repository.UserRepository) *AuthService {
+func NewAuthService(repo *user.UserRepository) *AuthService {
 	return &AuthService{Repo: repo}
 }
 
@@ -39,7 +38,7 @@ func (s *AuthService) Registration(ctx context.Context, name, email, password st
 	if err != nil {
 		return "", nil
 	}
-	user := &models.User{
+	user := &user.User{
 		Name:     name,
 		Email:    email,
 		Password: string(hashedPassword),

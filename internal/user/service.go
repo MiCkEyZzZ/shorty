@@ -1,12 +1,9 @@
-package service
+package user
 
 import (
 	"context"
 	"fmt"
 	"log"
-
-	"shorty/internal/models"
-	"shorty/internal/repository"
 )
 
 // Ошибки, связанные с работой с пользователями.
@@ -19,16 +16,16 @@ var (
 
 // UserService предоставляет методы для работы с пользователями.
 type UserService struct {
-	Repo *repository.UserRepository
+	Repo *UserRepository
 }
 
 // NewUserService создаёт новый экземпляр UserService.
-func NewUserService(repo *repository.UserRepository) *UserService {
+func NewUserService(repo *UserRepository) *UserService {
 	return &UserService{Repo: repo}
 }
 
 // FindAll получает список всех пользователей.
-func (s *UserService) FindAll(ctx context.Context) ([]*models.User, error) {
+func (s *UserService) FindAll(ctx context.Context) ([]*User, error) {
 	users, err := s.Repo.FindAll(ctx)
 	if err != nil {
 		log.Printf("[UserService] Ошибка при получении списка пользователей: %v", err)
@@ -38,7 +35,7 @@ func (s *UserService) FindAll(ctx context.Context) ([]*models.User, error) {
 }
 
 // FindByID ищет пользователя по его ID.
-func (s *UserService) FindByID(ctx context.Context, id uint) (*models.User, error) {
+func (s *UserService) FindByID(ctx context.Context, id uint) (*User, error) {
 	user, err := s.Repo.FindByID(ctx, id)
 	if err != nil {
 		log.Printf("[UserService] Ошибка при поиске пользователя (ID: %d): %v", id, err)
@@ -51,7 +48,7 @@ func (s *UserService) FindByID(ctx context.Context, id uint) (*models.User, erro
 }
 
 // Update обновляет данные пользователя.
-func (s *UserService) Update(ctx context.Context, user *models.User) (*models.User, error) {
+func (s *UserService) Update(ctx context.Context, user *User) (*User, error) {
 	updateUser, err := s.Repo.Update(ctx, user)
 	if err != nil {
 		log.Printf("[UserService] Ошибка при обновлении пользователя (ID: %d): %v", user.ID, err)

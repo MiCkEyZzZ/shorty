@@ -1,4 +1,4 @@
-package service
+package link
 
 import (
 	"context"
@@ -7,9 +7,6 @@ import (
 	"log"
 
 	"gorm.io/gorm"
-
-	"shorty/internal/models"
-	"shorty/internal/repository"
 )
 
 // Ошибки, связанные с работой с коращенными ссылками.
@@ -23,16 +20,16 @@ var (
 
 // LinkService - сервис для управления сокращёнными ссылками.
 type LinkService struct {
-	repo *repository.LinkRepository
+	repo *LinkRepository
 }
 
 // NewLinkService создаёт новый экземпляр LinkService.
-func NewLinkService(repo *repository.LinkRepository) *LinkService {
+func NewLinkService(repo *LinkRepository) *LinkService {
 	return &LinkService{repo: repo}
 }
 
 // Create создаёт новую сокращённую ссылку.
-func (s *LinkService) Create(ctx context.Context, link *models.Link) (*models.Link, error) {
+func (s *LinkService) Create(ctx context.Context, link *Link) (*Link, error) {
 	newLink, err := s.repo.CreateLink(ctx, link)
 	if err != nil {
 		log.Printf("[LinkService] Ошибка при создании ссылки: %v", err)
@@ -47,13 +44,13 @@ func (s *LinkService) Count(ctx context.Context) int64 {
 }
 
 // GetLinks получает список ссылок.
-func (s *LinkService) GetLinks(ctx context.Context, limit, offset int) []models.Link {
+func (s *LinkService) GetLinks(ctx context.Context, limit, offset int) []Link {
 	links := s.repo.GetLinks(ctx, limit, offset)
 	return links
 }
 
 // GetByHash ищет сокращённую ссылку по её хешу.
-func (s *LinkService) GetByHash(ctx context.Context, hash string) (*models.Link, error) {
+func (s *LinkService) GetByHash(ctx context.Context, hash string) (*Link, error) {
 	link, err := s.repo.GetLinkByHash(ctx, hash)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -66,7 +63,7 @@ func (s *LinkService) GetByHash(ctx context.Context, hash string) (*models.Link,
 }
 
 // Update обновляет существующую сокращённую ссылку.
-func (s *LinkService) Update(ctx context.Context, link *models.Link) (*models.Link, error) {
+func (s *LinkService) Update(ctx context.Context, link *Link) (*Link, error) {
 	updatedLink, err := s.repo.UpdateLink(ctx, link)
 	if err != nil {
 		log.Printf("[LinkService] Ошибка при обновлении ссылки (ID: %d): %v", link.ID, err)
@@ -86,7 +83,7 @@ func (s *LinkService) Delete(ctx context.Context, id uint) error {
 }
 
 // FindByID находит ссылку по её ID.
-func (s *LinkService) FindByID(ctx context.Context, id uint) (*models.Link, error) {
+func (s *LinkService) FindByID(ctx context.Context, id uint) (*Link, error) {
 	link, err := s.repo.FindLinkByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

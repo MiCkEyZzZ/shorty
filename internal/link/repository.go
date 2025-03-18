@@ -1,4 +1,4 @@
-package repository
+package link
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"shorty/internal/models"
 	"shorty/pkg/db"
 )
 
@@ -26,7 +25,7 @@ func NewLinkRepository(db *db.DB) *LinkRepository {
 }
 
 // CreateLink добавляет новую ссылку в базу данных.
-func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
+func (r *LinkRepository) CreateLink(ctx context.Context, link *Link) (*Link, error) {
 	res := r.Database.DB.WithContext(ctx).Create(link)
 	if res.Error != nil {
 		log.Printf("[LinkRepository] Ошибка создания ссылки: %v", res.Error)
@@ -42,15 +41,15 @@ func (r *LinkRepository) Count(ctx context.Context) int64 {
 }
 
 // GetLinks получает список ссылок.
-func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) []models.Link {
-	var links []models.Link
+func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) []Link {
+	var links []Link
 	r.Database.WithContext(ctx).Table("links").Where("deleted_at is null").Order("id asc").Limit(limit).Offset(offset).Scan(&links)
 	return links
 }
 
 // GetLinkByHash ищет ссылку в базе данных по её хешу.
-func (r *LinkRepository) GetLinkByHash(ctx context.Context, hash string) (*models.Link, error) {
-	var link models.Link
+func (r *LinkRepository) GetLinkByHash(ctx context.Context, hash string) (*Link, error) {
+	var link Link
 	res := r.Database.DB.WithContext(ctx).First(&link, "hash = ?", hash)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -64,7 +63,7 @@ func (r *LinkRepository) GetLinkByHash(ctx context.Context, hash string) (*model
 }
 
 // UpdateLink обновляет данные ссылки в базе данных.
-func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
+func (r *LinkRepository) UpdateLink(ctx context.Context, link *Link) (*Link, error) {
 	res := r.Database.DB.WithContext(ctx).Clauses(clause.Returning{}).Updates(link)
 	if res.Error != nil {
 		log.Printf("[LinkRepository] Ошибка обновления ссылки (ID: %d): %v", link.ID, res.Error)
@@ -83,7 +82,7 @@ func (r *LinkRepository) DeleteLink(ctx context.Context, id uint) error {
 		return fmt.Errorf("ссылка с ID %d не найдена", id)
 	}
 
-	res := r.Database.DB.WithContext(ctx).Delete(&models.Link{}, id)
+	res := r.Database.DB.WithContext(ctx).Delete(&Link{}, id)
 	if res.Error != nil {
 		log.Printf("[LinkRepository] Ошибка удаления ссылки (ID: %d): %v", id, res.Error)
 		return fmt.Errorf("ошибка при удалении ссылки из БД: %w", res.Error)
@@ -92,8 +91,8 @@ func (r *LinkRepository) DeleteLink(ctx context.Context, id uint) error {
 }
 
 // FindLinkByID находит ссылку по её ID.
-func (r *LinkRepository) FindLinkByID(ctx context.Context, id uint) (*models.Link, error) {
-	var link models.Link
+func (r *LinkRepository) FindLinkByID(ctx context.Context, id uint) (*Link, error) {
+	var link Link
 	res := r.Database.DB.WithContext(ctx).First(&link, id)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {

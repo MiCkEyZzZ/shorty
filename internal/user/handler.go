@@ -6,8 +6,6 @@ import (
 	"strconv"
 
 	"shorty/internal/config"
-	"shorty/internal/models"
-	"shorty/internal/service"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
 )
@@ -15,13 +13,13 @@ import (
 // UserHandlerDeps - зависимости для создания экземпляра UserHandler
 type UserHandlerDeps struct {
 	*config.Config
-	Service *service.UserService
+	Service *UserService
 }
 
 // UserHandler - обработчик для управления пользователями.
 type UserHandler struct {
 	*config.Config
-	Service *service.UserService
+	Service *UserService
 }
 
 // NewUserHandler регистрирует маршруты, связанные с пользователями, и привязывает их к методам UserHandler.
@@ -82,7 +80,7 @@ func (h *UserHandler) Update() http.HandlerFunc {
 			http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
 			return
 		}
-		body, err := req.HandleBody[models.User](&w, r)
+		body, err := req.HandleBody[User](&w, r)
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка обработки тела запроса: %v", err)
 			http.Error(w, "Не удалось обработать тело запроса", http.StatusBadRequest)

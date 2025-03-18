@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"shorty/internal/config"
-	"shorty/internal/service"
 	"shorty/pkg/jwt"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
@@ -14,13 +13,13 @@ import (
 // AuthHandlerDeps - зависимости для обработчика аутентификации.
 type AuthHandlerDeps struct {
 	*config.Config
-	Service *service.AuthService
+	Service *AuthService
 }
 
 // AuthHandler - обработчик аутентификации.
 type AuthHandler struct {
 	*config.Config
-	Service *service.AuthService
+	Service *AuthService
 }
 
 // NewAuthHandler - создание обработчика аутентификации.
