@@ -14,7 +14,7 @@ func NewJWT(secret string) *JWT {
 	return &JWT{Secret: secret}
 }
 
-func (j *JWT) Create(data JWTData) (string, error) {
+func (j *JWT) CreateToken(data JWTData) (string, error) {
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"email": data.Email})
 	s, err := t.SignedString([]byte(j.Secret))
 	if err != nil {

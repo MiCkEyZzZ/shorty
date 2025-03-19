@@ -3,63 +3,29 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	_ "github.com/lib/pq"
 
+	"shorty/internal/app"
 	"shorty/internal/config"
-	"shorty/internal/handler"
-	"shorty/internal/repository"
-	"shorty/internal/service"
-	"shorty/pkg/db"
-	"shorty/pkg/event"
-	"shorty/pkg/middleware"
 )
 
 func main() {
 	cfg := config.NewConfig()
-	router := http.NewServeMux()
-	eventBus := event.NewEventBus()
-	db, err := db.NewDatabase(cfg)
+
+	app, err := app.NewApp(cfg)
 	if err != nil {
-		fmt.Printf("Не удалось подключиться к базе данных: %v", err)
-		return
+		log.Fatalf("Ошибка инициализации приложения: %v", err)
 	}
 
-	// Репозитории.
-	linkRepository := repository.NewLinkRepository(db)
-	userRepository := repository.NewUserRepository(db)
-	statRepository := repository.NewStatRepository(db)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// Сервисы.
-	linkService := service.NewLinkService(linkRepository)
-	userService := service.NewUserService(userRepository)
-	authService := service.NewAuthService(userRepository)
-	statService := service.NewStatService(&service.StatServiceDeps{EventBus: eventBus, Repo: statRepository})
-
-	// Обработчики.
-	handler.NewLinkHandler(router, handler.LinkHandlerDeps{Config: cfg, Service: linkService, EventBus: eventBus})
-	handler.NewUserHandler(router, handler.UserHandlerDeps{Config: cfg, Service: userService})
-	handler.NewAuthHandler(router, handler.AuthHandlerDeps{Config: cfg, Service: authService})
-	handler.NewStatHandler(router, handler.StatHandlerDeps{Config: cfg, Service: statService})
-
-	// Промежуточное ПО.
-	stack := middleware.Chain(
-		middleware.CORS,
-		middleware.Logging,
-	)
-
-	ctx := context.Background()
-	go statService.AddClick(ctx)
-
-	// HTTP-сервер.
-	server := http.Server{
-		Addr:    ":8080",
-		Handler: stack(router),
-	}
-
-	fmt.Println("Сервер запущен на http://localhost:8080")
-	if err := server.ListenAndServe(); err != nil {
-		fmt.Printf("Не удалось запустить сервер: %v", err)
+	if err := app.Run(ctx); err != nil {
+		fmt.Printf("Ошибка запуска сервера %v", err)
 	}
 }

@@ -21,5 +21,6 @@ func main() {
 	}
 	// db.Migrator().DropTable(&models.User{})
 	// db.Migrator().DropTable(&models.Link{})
+	// db.Migrator().DropTable(&models.Stat{})
 	db.AutoMigrate(&models.Link{}, &models.User{}, &models.Stat{})
 }
