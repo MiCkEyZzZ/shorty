@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"shorty/internal/models"
@@ -40,7 +39,7 @@ func (s *AuthService) Registration(ctx context.Context, name, email, password st
 		return "", fmt.Errorf("пользователь с email %s уже зарегистрирован", email)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := models.Hash(password)
 	if err != nil {
 		log.Printf("[AuthService] Ошибка хеширования пароля: %v", err)
 		return "", fmt.Errorf("не удалось хешировать пароль: %w", err)
@@ -70,7 +69,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 		return "", fmt.Errorf("ошибка при получении пользователя: %w", err)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(exists.Password), []byte(password))
+	err = models.VerifyPassword(exists.Password, password)
 	if err != nil {
 		log.Printf("[AuthService] Ошибка при сравнении паролей: %v", err)
 		return "", ErrAuthWrongCredential
