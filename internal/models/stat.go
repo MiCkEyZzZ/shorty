@@ -8,7 +8,10 @@ import (
 // Stat стурктура представляет сущность статистики.
 type Stat struct {
 	gorm.Model
-	LinkID uint           `json:"link_id" gorm:"index"`
-	Clicks int            `json:"clicks"`
-	Date   datatypes.Date `json:"date" gorm:"index"`
+	LinkID    uint           `json:"link_id" gorm:"index"`
+	Clicks    int            `json:"clicks"`
+	Date      datatypes.Date `json:"date" gorm:"index"`
+	IP        string         `json:"ip"`
+	Referrer  string         `json:"referrer"`
+	UserAgent string         `json:"user_agent"`
 }

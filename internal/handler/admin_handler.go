@@ -5,37 +5,40 @@ import (
 
 	"shorty/internal/config"
 	"shorty/internal/service"
+	"shorty/pkg/middleware"
 )
 
 type AdminHandlerDeps struct {
-	Config  *config.Config
-	Service *service.UserService
+	Config      *config.Config
+	UserService *service.UserService
 }
 
 type AdminHandler struct {
-	Config  *config.Config
-	Service *service.UserService
+	Config      *config.Config
+	UserService *service.UserService
 }
 
 func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	handler := &AdminHandler{
-		Config:  deps.Config,
-		Service: deps.Service,
+		Config:      deps.Config,
+		UserService: deps.UserService,
 	}
 
 	// Статистика.
-	router.HandleFunc("GET /admin/stats", handler.GetStats())
+	router.HandleFunc("GET /admin/stats", middleware.AdminOnly(handler.GetStats()))
 
 	// Управление пользователями.
-	router.HandleFunc("GET /admin/users", handler.Getusers())
-	router.HandleFunc("GET /admin/users/{id}", handler.GetUser())
-	router.HandleFunc("PATCH /admin/users/{id}", handler.UpdateUser())
-	router.HandleFunc("DELETE /admin/users/{id}", handler.DeleteUser())
-	router.HandleFunc("POST /admin/users", handler.BlockUser())
+	router.HandleFunc("GET /admin/users", middleware.AdminOnly(handler.Getusers()))
+	router.HandleFunc("GET /admin/users/{id}", middleware.AdminOnly(handler.GetUser()))
+	router.HandleFunc("PATCH /admin/users/{id}", middleware.AdminOnly(handler.UpdateUser()))
+	router.HandleFunc("DELETE /admin/users/{id}", middleware.AdminOnly(handler.DeleteUser()))
+	router.HandleFunc("PATCH /admin/users/{id}/block", middleware.AdminOnly(handler.BlockUser()))
+	router.HandleFunc("PATCH /admin/users/{id}/unblock", middleware.AdminOnly(handler.UnblockUser()))
 
 	// Управление ссылками.
-	router.HandleFunc("POST /admin/{id}", handler.BlockLink())
-	router.HandleFunc("DELETE /admin/{id}", handler.DeleteLink())
+	router.HandleFunc("POST /admin/links/{id}/block", middleware.AdminOnly(handler.BlockLink()))
+	router.HandleFunc("PATCH /admin/links/{id}/unblock", middleware.AdminOnly(handler.UnblockLink()))
+	router.HandleFunc("DELETE /admin/links/{id}", middleware.AdminOnly(handler.DeleteLink()))
 }
 
 func (a *AdminHandler) GetStats() http.HandlerFunc {
@@ -74,7 +77,19 @@ func (a *AdminHandler) BlockUser() http.HandlerFunc {
 	}
 }
 
+func (a *AdminHandler) UnblockUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Логика для получения статистики
+	}
+}
+
 func (a *AdminHandler) BlockLink() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Логика для получения статистики
+	}
+}
+
+func (a *AdminHandler) UnblockLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Логика для получения статистики
 	}

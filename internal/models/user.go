@@ -15,10 +15,11 @@ const (
 // User стурктура представляет сущность пользователя.
 type User struct {
 	gorm.Model
-	Name     string
-	Email    string `gorm:"index"`
-	Password string
-	Role     Role `json:"role"`
+	Name      string
+	Email     string `gorm:"index"`
+	Password  string
+	Role      Role `json:"role"`
+	IsBlocked bool `json:"is_blocked" gorm:"default:false"`
 }
 
 // Hash ф-я для хеширования пароля.

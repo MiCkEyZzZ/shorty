@@ -11,9 +11,10 @@ import (
 // Link стурктура представляет сущность ссылки.
 type Link struct {
 	gorm.Model
-	Url   string `json:"url"`
-	Hash  string `json:"hash" gorm:"uniqueIndex"`
-	Stats []Stat `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Url       string `json:"url"`
+	Hash      string `json:"hash" gorm:"uniqueIndex"`
+	Stats     []Stat `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	IsBlocked bool   `json:"is_blocked" gorm:"default:false"`
 }
 
 // NewLink создание нового экземпляра ссылки.
