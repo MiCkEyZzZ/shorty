@@ -2,11 +2,11 @@ package handler
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"shorty/internal/config"
@@ -14,6 +14,7 @@ import (
 	"shorty/internal/payload"
 	"shorty/internal/service"
 	"shorty/pkg/event"
+	"shorty/pkg/logger"
 	"shorty/pkg/middleware"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
@@ -66,7 +67,7 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 		ctx := r.Context()
 		body, err := req.HandleBody[payload.CreateLinkRequest](&w, r)
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка обработки тела запроса: %v", err)
+			logger.Error("[LinkHandler] Ошибка обработки тела запроса:", zap.Error(err))
 			res.ERROR(w, ErrRequestBodyParseLink, http.StatusBadRequest)
 			return
 		}
@@ -74,7 +75,7 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 		link := models.NewLink(body.URL)
 		newLink, err := h.Service.Create(ctx, link)
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка создания ссылки: %v", err)
+			logger.Error("[LinkHandler] Ошибка создания ссылки:", zap.Error(err))
 			res.ERROR(w, ErrCreateShortURLLink, http.StatusBadRequest)
 			return
 		}
@@ -83,18 +84,19 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 	}
 }
 
+// GetAll - полученте всех сокращённых ссылок.
 func (h *LinkHandler) GetAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка неверный лимит: %v", err)
+			logger.Error("[LinkHandler] Ошибка неверный лимит:", zap.Error(err))
 			res.ERROR(w, ErrInvalidLimit, http.StatusBadRequest)
 			return
 		}
 		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка неверный оффсет: %v", err)
+			logger.Error("[LinkHandler] Ошибка неверный оффсет:", zap.Error(err))
 			res.ERROR(w, ErrInvalidOffset, http.StatusBadRequest)
 			return
 		}
@@ -110,7 +112,7 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 		ctx := r.Context()
 		hash := r.PathValue("hash")
 		if hash == "" {
-			log.Printf("[LinkHandler] не удалось найти хеш %s", hash)
+			logger.Error("[LinkHandler] не удалось найти хеш:", zap.String("hash", hash))
 			res.ERROR(w, ErrHashNotProvided, http.StatusBadRequest)
 			return
 		}
@@ -118,7 +120,7 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 		// Получаем ссылку по хешу
 		link, err := h.Service.GetByHash(ctx, hash)
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка редиректа %s: %v", hash, err)
+			logger.Error("[LinkHandler] Ошибка редиректа", zap.String("hash", hash), zap.Error(err))
 			res.ERROR(w, ErrURLNotFound, http.StatusInternalServerError)
 			return
 		}
@@ -132,7 +134,7 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 
 			go func() {
 				if err := h.EventBus.Publish(event.Event{Type: event.EventLinkVisited, Data: linkID}); err != nil {
-					log.Printf("[StatService] Ошибка записи клика (linkID: %d): %v", linkID, err)
+					logger.Error("[StatService] Ошибка записи клика", zap.Uint("linkID", linkID), zap.Error(err))
 					res.ERROR(w, ErrClickWriteFailed, http.StatusInternalServerError)
 				}
 				close(done) // Закрываем канал по завершению
@@ -141,7 +143,7 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 			select {
 			case <-done: // Успешная запись
 			case <-timer.C: // Таймаут
-				log.Printf("[StatService] Таймаут при записи клика (linkID: %d)", linkID)
+				logger.Info("[StatService] Таймаут при записи клика", zap.Uint("linkID", linkID))
 			}
 		}(link.ID)
 
@@ -155,14 +157,14 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 		ctx := r.Context()
 		id, err := parseID(r)
 		if err != nil {
-			log.Printf("[LinkHandler] Некорректный ID: %v", err)
+			logger.Error("[LinkHandler] Некорректный ID", zap.Error(err))
 			res.ERROR(w, ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 
 		body, err := req.HandleBody[payload.UpdateLinkRequest](&w, r)
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка обработки тела запроса: %v", err)
+			logger.Error("[LinkHandler] Ошибка обработки тела запроса", zap.Error(err))
 			res.ERROR(w, ErrRequestBodyParseLink, http.StatusInternalServerError)
 			return
 		}
@@ -173,7 +175,7 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 			Hash:  body.Hash,
 		})
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка обновления ссылки (ID: %d): %v", id, err)
+			logger.Error("[LinkHandler] Ошибка обновления ссылки", zap.Uint("id", id), zap.Error(err))
 			res.ERROR(w, ErrUpdateLinkFailed, http.StatusInternalServerError)
 			return
 		}
@@ -188,25 +190,26 @@ func (h *LinkHandler) Delete() http.HandlerFunc {
 		ctx := r.Context()
 		id, err := parseID(r)
 		if err != nil {
-			log.Printf("[LinkHandler] Некорректный ID: %v", err)
+			logger.Error("[LinkHandler] Некорректный ID", zap.Error(err))
 			res.ERROR(w, ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 
 		_, err = h.Service.FindByID(ctx, uint(id))
 		if err != nil {
-			log.Printf("[LinkHandler] Попытка удалить несуществующую ссылку (ID: %d)", id)
+			logger.Error("[LinkHandler] Попытка удалить несуществующую ссылку", zap.Uint("id", id))
 			res.ERROR(w, ErrLinkNotFound, http.StatusNotFound)
 			return
 		}
 
 		err = h.Service.Delete(ctx, uint(id))
 		if err != nil {
-			log.Printf("[LinkHandler] Ошибка удаления ссылки (ID: %d): %v", id, err)
+			logger.Error("[LinkHandler] Ошибка удаления ссылки (ID: %d): %v", zap.Uint("id", id), zap.Error(err))
 			res.ERROR(w, ErrLinkDeleteFailed, http.StatusInternalServerError)
 			return
 		}
-		log.Printf("[LinkHandler] Ссылка (ID: %d) успешно удалена", id)
+		logger.Info("[LinkHandler] Ссылка (ID: %d) успешно удалена", zap.Uint("id", id))
+
 		res.JSON(w, map[string]string{"message": "ссылка удалена"}, http.StatusOK)
 	}
 }

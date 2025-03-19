@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"shorty/internal/handler"
 	"shorty/internal/service"
 	"shorty/pkg/event"
+	"shorty/pkg/logger"
 )
 
 type Server struct {
@@ -52,7 +52,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		log.Println("Выключение сервера...")
+		logger.Info("Выключение сервера")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		return s.httpServer.Shutdown(shutdownCtx)

@@ -2,13 +2,15 @@ package handler
 
 import (
 	"errors"
-	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 
 	"shorty/internal/config"
 	"shorty/internal/payload"
 	"shorty/internal/service"
 	"shorty/pkg/jwt"
+	"shorty/pkg/logger"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
 )
@@ -53,21 +55,21 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 
 		body, err := req.HandleBody[payload.SignupRequest](&w, r)
 		if err != nil {
-			log.Printf("[AuthHandler] Ошибка обработки тела запроса: %v", err)
+			logger.Error("[AuthHandler] Ошибка обработки тела запроса:", zap.Error(err))
 			res.ERROR(w, ErrBadRequest, http.StatusBadRequest)
 			return
 		}
 
 		email, err := h.Service.Registration(ctx, body.Name, body.Email, body.Password)
 		if err != nil {
-			log.Printf("[AuthHandler] Ошибка регистрации: %v", err)
+			logger.Error("[AuthHandler] Ошибка регистрации:", zap.Error(err))
 			res.ERROR(w, ErrUserRegistrationFailed, http.StatusInternalServerError)
 			return
 		}
 
 		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(jwt.JWTData{Email: email})
 		if err != nil {
-			log.Println("[AuthHandler] Ошибка при авторизации:", err)
+			logger.Error("[AuthHandler] Ошибка при авторизации:", zap.Error(err))
 			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
@@ -89,20 +91,20 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 
 		body, err := req.HandleBody[payload.SigninRequest](&w, r)
 		if err != nil {
-			log.Println("[AuthHandler] Ошибка при разборе тела запроса:", err)
+			logger.Error("[AuthHandler] Ошибка при разборе тела запроса:", zap.Error(err))
 			res.ERROR(w, ErrBadRequest, http.StatusBadRequest)
 			return
 		}
 
 		email, err := h.Service.Login(ctx, body.Email, body.Password)
 		if err != nil {
-			log.Println("[AuthHandler] Ошибка при авторизации:", err)
+			logger.Error("[AuthHandler] Ошибка при авторизации:", zap.Error(err))
 			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
 		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(jwt.JWTData{Email: email})
 		if err != nil {
-			log.Println("[AuthHandler] Ошибка при авторизации:", err)
+			logger.Error("[AuthHandler] Ошибка при авторизации:", zap.Error(err))
 			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}

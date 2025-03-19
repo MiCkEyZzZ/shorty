@@ -12,9 +12,12 @@ import (
 
 	"shorty/internal/app"
 	"shorty/internal/config"
+	"shorty/pkg/logger"
 )
 
 func main() {
+	logger.InitLogger("development")
+	defer logger.Sync()
 	cfg := config.NewConfig()
 
 	app, err := app.NewApp(cfg)
