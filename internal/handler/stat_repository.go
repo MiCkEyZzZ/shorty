@@ -46,6 +46,6 @@ func (h *StatHandler) GetStats() http.HandlerFunc {
 			return
 		}
 		stats := h.Service.GetStats(ctx, by, from, to)
-		res.Json(w, stats, http.StatusOK)
+		res.JSON(w, stats, http.StatusOK)
 	}
 }

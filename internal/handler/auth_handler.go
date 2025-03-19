@@ -66,7 +66,7 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 		data := payload.SignupResponse{
 			Token: token,
 		}
-		res.Json(w, data, http.StatusOK)
+		res.JSON(w, data, http.StatusOK)
 	}
 }
 
@@ -101,6 +101,6 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 		data := payload.SinginResponse{
 			Token: token,
 		}
-		res.Json(w, data, http.StatusOK)
+		res.JSON(w, data, http.StatusOK)
 	}
 }

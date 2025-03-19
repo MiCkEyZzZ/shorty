@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,6 +11,15 @@ import (
 	"shorty/internal/service"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
+)
+
+var (
+	ErrorGetUsers       = errors.New("не удалось получить список пользователей")
+	ErrWrongID          = errors.New("некорректный ID пользователя")
+	ErrUserNotFound     = errors.New("пользователь не найден")
+	ErrRequestBodyParse = errors.New("не удалось обработать тело запроса")
+	ErrUserUpdateFailed = errors.New("не удалось обновить пользователя")
+	ErrUserDeleteFailed = errors.New("не удалось удалить пользователя")
 )
 
 // UserHandlerDeps - зависимости для создания экземпляра UserHandler
@@ -43,10 +53,10 @@ func (h *UserHandler) FindAll() http.HandlerFunc {
 		users, err := h.Service.GetAll(ctx)
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка получения списка пользователей: %v", err)
-			http.Error(w, "Не удалось получить список пользователей", http.StatusInternalServerError)
+			res.ERROR(w, ErrorGetUsers, http.StatusInternalServerError)
 			return
 		}
-		res.Json(w, users, http.StatusOK)
+		res.JSON(w, users, http.StatusOK)
 	}
 }
 
@@ -58,16 +68,16 @@ func (h *UserHandler) FindByID() http.HandlerFunc {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			log.Printf("[UserHandler] Некорректный ID пользователя: %v", err)
-			http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
+			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
 			return
 		}
 		user, err := h.Service.GetByID(ctx, uint(id))
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка поиска пользователя (ID: %d): %v", id, err)
-			http.Error(w, "Пользователь не найден", http.StatusNotFound)
+			res.ERROR(w, ErrUserNotFound, http.StatusNotFound)
 			return
 		}
-		res.Json(w, user, http.StatusOK)
+		res.JSON(w, user, http.StatusOK)
 	}
 }
 
@@ -79,23 +89,23 @@ func (h *UserHandler) Update() http.HandlerFunc {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			log.Printf("[UserHandler] Некорректный ID пользователя: %v", err)
-			http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
+			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
 			return
 		}
 		body, err := req.HandleBody[models.User](&w, r)
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка обработки тела запроса: %v", err)
-			http.Error(w, "Не удалось обработать тело запроса", http.StatusBadRequest)
+			res.ERROR(w, ErrRequestBodyParse, http.StatusBadRequest)
 			return
 		}
 		body.ID = uint(id)
 		updatedUser, err := h.Service.Update(ctx, body)
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка обновления пользователя (ID: %d): %v", id, err)
-			http.Error(w, "Не удалось обновить пользователя", http.StatusInternalServerError)
+			res.ERROR(w, ErrUserUpdateFailed, http.StatusInternalServerError)
 			return
 		}
-		res.Json(w, updatedUser, http.StatusOK)
+		res.JSON(w, updatedUser, http.StatusOK)
 	}
 }
 
@@ -107,16 +117,16 @@ func (h *UserHandler) Delete() http.HandlerFunc {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			log.Printf("[UserHandler] Некорректный ID пользователя: %v", err)
-			http.Error(w, "Некорректный ID пользователя", http.StatusBadRequest)
+			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
 			return
 		}
 		err = h.Service.Delete(ctx, uint(id))
 		if err != nil {
 			log.Printf("[UserHandler] Ошибка удаления пользователя (ID: %d): %v", id, err)
-			http.Error(w, "Не удалось удалить пользователя", http.StatusInternalServerError)
+			res.ERROR(w, ErrUserDeleteFailed, http.StatusInternalServerError)
 			return
 		}
 		log.Printf("[UserHandler] Пользователь (ID: %d) успешно удалён", id)
-		res.Json(w, map[string]string{"message": "Пользователь удалён"}, http.StatusOK)
+		res.JSON(w, map[string]string{"message": "Пользователь удалён"}, http.StatusOK)
 	}
 }

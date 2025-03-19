@@ -64,7 +64,7 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 			return
 		}
 
-		res.Json(w, newLink, http.StatusOK)
+		res.JSON(w, newLink, http.StatusOK)
 	}
 }
 
@@ -83,7 +83,7 @@ func (h *LinkHandler) GetAll() http.HandlerFunc {
 		}
 		count, _ := h.Service.Count(ctx)
 		links, _ := h.Service.GetAll(ctx, limit, offset)
-		res.Json(w, payload.GetAllLinksResponse{Count: count, Links: links}, http.StatusOK)
+		res.JSON(w, payload.GetAllLinksResponse{Count: count, Links: links}, http.StatusOK)
 	}
 }
 
@@ -160,7 +160,7 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 			return
 		}
 
-		res.Json(w, link, http.StatusOK)
+		res.JSON(w, link, http.StatusOK)
 	}
 }
 
@@ -189,7 +189,7 @@ func (h *LinkHandler) Delete() http.HandlerFunc {
 			return
 		}
 		log.Printf("[LinkHandler] Ссылка (ID: %d) успешно удалена", id)
-		res.Json(w, map[string]string{"message": "ссылка удалена"}, http.StatusOK)
+		res.JSON(w, map[string]string{"message": "ссылка удалена"}, http.StatusOK)
 	}
 }
 
