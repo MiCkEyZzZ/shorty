@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 
 	"go.uber.org/zap"
 
+	"shorty/internal/common"
 	"shorty/internal/config"
 	"shorty/internal/payload"
 	"shorty/internal/service"
@@ -13,13 +13,6 @@ import (
 	"shorty/pkg/logger"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
-)
-
-var (
-	ErrMethodNotAllowed       = errors.New("метод не поддерживается")
-	ErrBadRequest             = errors.New("некорректный запрос")
-	ErrUserRegistrationFailed = errors.New("ошибка регистрации пользователя")
-	ErrAuthFailed             = errors.New("ошибка при авторизации")
 )
 
 // AuthHandlerDeps - зависимости для обработчика аутентификации.
@@ -49,33 +42,35 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if r.Method != http.MethodPost {
-			res.ERROR(w, ErrMethodNotAllowed, http.StatusMethodNotAllowed)
+			logger.Error("Неверный метод запроса", zap.String("method", r.Method))
+			res.ERROR(w, common.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 			return
 		}
 
 		body, err := req.HandleBody[payload.SignupRequest](&w, r)
 		if err != nil {
-			logger.Error("[AuthHandler] Ошибка обработки тела запроса:", zap.Error(err))
-			res.ERROR(w, ErrBadRequest, http.StatusBadRequest)
+			logger.Error("Ошибка при парсинге тела запроса для регистрации", zap.Error(err))
+			res.ERROR(w, common.ErrBadRequest, http.StatusBadRequest)
 			return
 		}
 
 		email, err := h.Service.Registration(ctx, body.Name, body.Email, body.Password)
 		if err != nil {
-			logger.Error("[AuthHandler] Ошибка регистрации:", zap.Error(err))
-			res.ERROR(w, ErrUserRegistrationFailed, http.StatusInternalServerError)
+			logger.Error("Ошибка регистрации пользователя", zap.String("email", body.Email), zap.Error(err))
+			res.ERROR(w, common.ErrUserRegistrationFailed, http.StatusInternalServerError)
 			return
 		}
 
 		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(jwt.JWTData{Email: email})
 		if err != nil {
-			logger.Error("[AuthHandler] Ошибка при авторизации:", zap.Error(err))
-			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
+			logger.Error("Ошибка при создании токена", zap.String("email", email), zap.Error(err))
+			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
 		data := payload.SignupResponse{
 			Token: token,
 		}
+		logger.Info("Пользователь успешно зарегистрирован", zap.String("email", body.Email))
 		res.JSON(w, data, http.StatusOK)
 	}
 }
@@ -85,32 +80,34 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if r.Method != http.MethodPost {
-			res.ERROR(w, ErrMethodNotAllowed, http.StatusMethodNotAllowed)
+			logger.Error("Неверный метод запроса", zap.String("method", r.Method))
+			res.ERROR(w, common.ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 			return
 		}
 
 		body, err := req.HandleBody[payload.SigninRequest](&w, r)
 		if err != nil {
-			logger.Error("[AuthHandler] Ошибка при разборе тела запроса:", zap.Error(err))
-			res.ERROR(w, ErrBadRequest, http.StatusBadRequest)
+			logger.Error("Ошибка при парсинге тела запроса для авторизации", zap.Error(err))
+			res.ERROR(w, common.ErrBadRequest, http.StatusBadRequest)
 			return
 		}
 
 		email, err := h.Service.Login(ctx, body.Email, body.Password)
 		if err != nil {
-			logger.Error("[AuthHandler] Ошибка при авторизации:", zap.Error(err))
-			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
+			logger.Error("Ошибка авторизации пользователя", zap.String("email", body.Email), zap.Error(err))
+			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
 		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(jwt.JWTData{Email: email})
 		if err != nil {
-			logger.Error("[AuthHandler] Ошибка при авторизации:", zap.Error(err))
-			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
+			logger.Error("Ошибка при создании токена для авторизованного пользователя", zap.String("email", email), zap.Error(err))
+			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
 		data := payload.SinginResponse{
 			Token: token,
 		}
+		logger.Info("Пользователь успешно авторизован", zap.String("email", body.Email))
 		res.JSON(w, data, http.StatusOK)
 	}
 }

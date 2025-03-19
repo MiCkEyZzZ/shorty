@@ -63,3 +63,11 @@ func Error(msg string, fields ...zap.Field) {
 func Debug(msg string, fields ...zap.Field) {
 	Logger.Debug(msg, fields...)
 }
+
+func Fatal(msg string, fields ...zap.Field) {
+	Logger.Fatal(msg, fields...)
+}
+
+func Warn(msg string, fields ...zap.Field) {
+	Logger.Warn(msg, fields...)
+}

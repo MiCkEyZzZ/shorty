@@ -3,12 +3,14 @@ package service
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
+
+	"go.uber.org/zap"
 
 	"shorty/internal/payload"
 	"shorty/internal/repository"
 	"shorty/pkg/event"
+	"shorty/pkg/logger"
 )
 
 var ErrInvalidLinkID = errors.New("неверный идентификатор ссылки")
@@ -35,16 +37,21 @@ func (s *StatService) AddClick(ctx context.Context) {
 		if msg.Type == event.EventLinkVisited {
 			linkID, ok := msg.Data.(uint)
 			if !ok {
-				log.Println("[StatService] Неверные данные EventLinkVisited:", msg.Data)
+				logger.Error("Неверные данные при получении события EventLinkVisited", zap.Any("data", msg.Data))
 				continue
 			}
 			if err := s.Repo.AddClick(context.Background(), linkID); err != nil {
-				log.Printf("[StatService] Ошибка при добавлении клика (LinkID: %d): %v", linkID, err)
+				logger.Error("Ошибка при добавлении клика", zap.Uint("linkID", linkID), zap.Error(err))
+			} else {
+				logger.Info("Добавлен клик", zap.Uint("linkID", linkID))
 			}
 		}
 	}
 }
 
 func (s *StatService) GetStats(ctx context.Context, by string, from, to time.Time) []payload.GetStatsResponse {
-	return s.Repo.GetStats(ctx, by, from, to)
+	logger.Info("Запрос статистики", zap.String("by", by), zap.Time("from", from), zap.Time("to", to))
+	stats := s.Repo.GetStats(ctx, by, from, to)
+	logger.Info("Статистика получена", zap.Int("count", len(stats)))
+	return stats
 }

@@ -2,13 +2,16 @@ package handler
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 
+	"go.uber.org/zap"
+
+	"shorty/internal/common"
 	"shorty/internal/config"
 	"shorty/internal/models"
 	"shorty/internal/service"
+	"shorty/pkg/logger"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
 )
@@ -17,7 +20,6 @@ var (
 	ErrorGetUsers       = errors.New("не удалось получить список пользователей")
 	ErrWrongID          = errors.New("некорректный ID пользователя")
 	ErrUserNotFound     = errors.New("пользователь не найден")
-	ErrRequestBodyParse = errors.New("не удалось обработать тело запроса")
 	ErrUserUpdateFailed = errors.New("не удалось обновить пользователя")
 	ErrUserDeleteFailed = errors.New("не удалось удалить пользователя")
 )
@@ -40,6 +42,7 @@ func NewUserHandler(router *http.ServeMux, deps UserHandlerDeps) {
 		Config:  deps.Config,
 		Service: deps.Service,
 	}
+
 	router.HandleFunc("GET /users", handler.FindAll())
 	router.HandleFunc("GET /users/{id}", handler.FindByID())
 	router.HandleFunc("PATCH /users/{id}", handler.Update())
@@ -52,10 +55,11 @@ func (h *UserHandler) FindAll() http.HandlerFunc {
 		ctx := r.Context()
 		users, err := h.Service.GetAll(ctx)
 		if err != nil {
-			log.Printf("[UserHandler] Ошибка получения списка пользователей: %v", err)
+			logger.Error("Ошибка получения списка пользователей", zap.Error(err))
 			res.ERROR(w, ErrorGetUsers, http.StatusInternalServerError)
 			return
 		}
+		logger.Info("Список пользователей успешно получен", zap.Int("count", len(users)))
 		res.JSON(w, users, http.StatusOK)
 	}
 }
@@ -67,16 +71,18 @@ func (h *UserHandler) FindByID() http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Printf("[UserHandler] Некорректный ID пользователя: %v", err)
+			logger.Error("Некорректный ID пользователя", zap.String("id", idStr), zap.Error(err))
 			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
 			return
 		}
 		user, err := h.Service.GetByID(ctx, uint(id))
 		if err != nil {
-			log.Printf("[UserHandler] Ошибка поиска пользователя (ID: %d): %v", id, err)
+			logger.Error("Ошибка поиска пользователя", zap.Int("id", id), zap.Error(err))
 			res.ERROR(w, ErrUserNotFound, http.StatusNotFound)
 			return
 		}
+		logger.Info("Пользователь найден", zap.Int("id", id))
+
 		res.JSON(w, user, http.StatusOK)
 	}
 }
@@ -88,23 +94,25 @@ func (h *UserHandler) Update() http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Printf("[UserHandler] Некорректный ID пользователя: %v", err)
+			logger.Error("Некорректный ID пользователя", zap.String("id", idStr), zap.Error(err))
 			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
 			return
 		}
 		body, err := req.HandleBody[models.User](&w, r)
 		if err != nil {
-			log.Printf("[UserHandler] Ошибка обработки тела запроса: %v", err)
-			res.ERROR(w, ErrRequestBodyParse, http.StatusBadRequest)
+			logger.Error("Ошибка обработки тела запроса", zap.Error(err))
+			res.ERROR(w, common.ErrRequestBodyParse, http.StatusBadRequest)
 			return
 		}
 		body.ID = uint(id)
 		updatedUser, err := h.Service.Update(ctx, body)
 		if err != nil {
-			log.Printf("[UserHandler] Ошибка обновления пользователя (ID: %d): %v", id, err)
+			logger.Error("Ошибка обновления пользователя", zap.Int("id", id), zap.Error(err))
 			res.ERROR(w, ErrUserUpdateFailed, http.StatusInternalServerError)
 			return
 		}
+		logger.Info("Пользователь успешно обновлён", zap.Int("id", id))
+
 		res.JSON(w, updatedUser, http.StatusOK)
 	}
 }
@@ -116,17 +124,18 @@ func (h *UserHandler) Delete() http.HandlerFunc {
 		idStr := r.PathValue("id")
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			log.Printf("[UserHandler] Некорректный ID пользователя: %v", err)
+			logger.Error("Некорректный ID пользователя", zap.String("id", idStr), zap.Error(err))
 			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
 			return
 		}
 		err = h.Service.Delete(ctx, uint(id))
 		if err != nil {
-			log.Printf("[UserHandler] Ошибка удаления пользователя (ID: %d): %v", id, err)
+			logger.Error("Ошибка удаления пользователя", zap.Int("id", id), zap.Error(err))
 			res.ERROR(w, ErrUserDeleteFailed, http.StatusInternalServerError)
 			return
 		}
-		log.Printf("[UserHandler] Пользователь (ID: %d) успешно удалён", id)
+		logger.Info("Пользователь успешно удалён", zap.Int("id", id))
+
 		res.JSON(w, map[string]string{"message": "Пользователь удалён"}, http.StatusOK)
 	}
 }

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"shorty/internal/models"
 	"shorty/internal/repository"
+	"shorty/pkg/logger"
 )
 
 var (
@@ -33,9 +34,10 @@ func NewLinkService(repo *repository.LinkRepository) *LinkService {
 func (s *LinkService) Create(ctx context.Context, link *models.Link) (*models.Link, error) {
 	newLink, err := s.Repo.CreateLink(ctx, link)
 	if err != nil {
-		log.Printf("[LinkService] Ошибка при создании ссылки: %v", err)
+		logger.Error("Ошибка при создании ссылки", zap.Error(err))
 		return nil, ErrLinkCreation
 	}
+	logger.Info("Ссылка успешно создана", zap.Uint("id", newLink.ID), zap.String("hash", newLink.Hash))
 	return newLink, nil
 }
 
@@ -43,9 +45,10 @@ func (s *LinkService) Create(ctx context.Context, link *models.Link) (*models.Li
 func (s *LinkService) GetAll(ctx context.Context, limit, offset int) ([]models.Link, error) {
 	links, err := s.Repo.GetLinks(ctx, limit, offset)
 	if err != nil {
-		log.Printf("[LinkService] Ошибка при получении списка ссылок: %v", err)
+		logger.Error("Ошибка при получении списка ссылок", zap.Error(err))
 		return nil, err
 	}
+	logger.Info("Получен список ссылок", zap.Int("limit", limit), zap.Int("offset", offset))
 	return links, nil
 }
 
@@ -54,11 +57,13 @@ func (s *LinkService) GetByHash(ctx context.Context, hash string) (*models.Link,
 	link, err := s.Repo.GetLinkHash(ctx, hash)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("Ссылка не найдена", zap.String("hash", hash))
 			return nil, ErrLinkNotFound
 		}
-		log.Printf("[LinkService] Ошибка получения ссылки по хешу %s: %v", hash, err)
+		logger.Error("Ошибка получения ссылки по хешу", zap.String("hash", hash), zap.Error(err))
 		return nil, fmt.Errorf("не удалось найти ссылку с хешем %s: %w", hash, err)
 	}
+	logger.Info("Ссылка найдена по хешу", zap.String("hash", hash), zap.Uint("id", link.ID))
 	return link, nil
 }
 
@@ -66,9 +71,10 @@ func (s *LinkService) GetByHash(ctx context.Context, hash string) (*models.Link,
 func (s *LinkService) Update(ctx context.Context, link *models.Link) (*models.Link, error) {
 	updatedLink, err := s.Repo.UpdateLink(ctx, link)
 	if err != nil {
-		log.Printf("[LinkService] Ошибка при обновлении ссылки (ID: %d): %v", link.ID, err)
+		logger.Error("Ошибка при обновлении ссылки", zap.Uint("id", link.ID), zap.Error(err))
 		return nil, ErrLinkUpdate
 	}
+	logger.Info("Ссылка успешно обновлена", zap.Uint("id", updatedLink.ID), zap.String("hash", updatedLink.Hash))
 	return updatedLink, nil
 }
 
@@ -76,9 +82,10 @@ func (s *LinkService) Update(ctx context.Context, link *models.Link) (*models.Li
 func (s *LinkService) Delete(ctx context.Context, linkID uint) error {
 	err := s.Repo.DeleteLink(ctx, linkID)
 	if err != nil {
-		log.Printf("[LinkService] Ошибка удаления ссылки (ID: %d): %v", linkID, err)
+		logger.Error("Ошибка удаления ссылки", zap.Uint("id", linkID), zap.Error(err))
 		return ErrLinkDeletion
 	}
+	logger.Info("Ссылка успешно удалена", zap.Uint("id", linkID))
 	return nil
 }
 
@@ -86,9 +93,10 @@ func (s *LinkService) Delete(ctx context.Context, linkID uint) error {
 func (s *LinkService) Count(ctx context.Context) (int64, error) {
 	res, err := s.Repo.CountLink(ctx)
 	if err != nil {
-		log.Printf("[LinkService] Ошибка при подсчёте ссылок: %v", err)
+		logger.Error("Ошибка при подсчёте ссылок", zap.Error(err))
 		return 0, err
 	}
+	logger.Info("Подсчитано количество ссылок", zap.Int64("count", res))
 	return res, nil
 }
 
@@ -97,10 +105,12 @@ func (s *LinkService) FindByID(ctx context.Context, linkID uint) (*models.Link, 
 	link, err := s.Repo.FindLinkByID(ctx, linkID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("Ссылка не найдена", zap.Uint("id", linkID))
 			return nil, ErrLinkNotFound
 		}
-		log.Printf("[LinkService] Ошибка при поиске ссылки (ID: %d): %v", linkID, err)
+		logger.Error("Ошибка при поиске ссылки", zap.Uint("id", linkID), zap.Error(err))
 		return nil, fmt.Errorf("не удалось найти ссылку: %w", err)
 	}
+	logger.Info("Ссылка найдена по ID", zap.Uint("id", linkID), zap.String("hash", link.Hash))
 	return link, nil
 }

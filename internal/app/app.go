@@ -9,6 +9,7 @@ import (
 	"shorty/internal/service"
 	"shorty/pkg/db"
 	"shorty/pkg/event"
+	"shorty/pkg/logger"
 	"shorty/pkg/middleware"
 )
 
@@ -17,6 +18,10 @@ type App struct {
 }
 
 func NewApp(cfg *config.Config) (*App, error) {
+	// Инициализируем логгер в соответствии с указанной средой
+	logger.InitLogger(logger.Env(cfg.Env))
+	defer logger.Sync()
+
 	// Инициализация БД
 	db, err := db.NewDatabase(cfg)
 	if err != nil {

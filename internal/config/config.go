@@ -21,6 +21,7 @@ type AuthConfig struct {
 type Config struct {
 	Db   DbConfig
 	Auth AuthConfig
+	Env  string
 }
 
 // NewConfig создаёт новый экземпляр конфигурации.
@@ -37,6 +38,7 @@ func NewConfig() *Config {
 		Auth: AuthConfig{
 			Secret: os.Getenv("SECRET"),
 		},
+		Env: getEnv("APP_ENV", "development"),
 	}
 }
 

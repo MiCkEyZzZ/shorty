@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"log"
 	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
@@ -12,6 +12,7 @@ import (
 	"shorty/internal/models"
 	"shorty/internal/payload"
 	"shorty/pkg/db"
+	"shorty/pkg/logger"
 )
 
 // StatRepository отвечает за операции с базой данных для сущности Stat.
@@ -49,13 +50,13 @@ func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
 			}
 			if err := tx.Create(&stat).Error; err != nil {
 				tx.Rollback()
-				log.Printf("[StatRepository] Ошибка при создании статистики: %v", err)
+				logger.Error("Ошибка при создании статистики", zap.Error(err))
 				return err
 			}
 		} else {
 			// Ошибка запроса
 			tx.Rollback()
-			log.Printf("[StatRepository] Ошибка при поиске статистики: %v", err)
+			logger.Error("Ошибка при поиске статистики", zap.Error(err))
 			return err
 		}
 	} else {
@@ -64,9 +65,10 @@ func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
 			Where("link_id = ? AND date = ?", linkID, currentDate).
 			Update("clicks", gorm.Expr("clicks + ?", 1)).Error; err != nil {
 			tx.Rollback()
-			log.Printf("[StatRepository] Ошибка при обновлении статистики: %v", err)
+			logger.Error("Ошибка при обновлении статистики", zap.Error(err))
 			return err
 		}
+		logger.Info("Количество кликов увеличено", zap.Uint("linkID", linkID), zap.Int("clicks", 1))
 	}
 	// Проверяем, не была ли уже откатана транзакция
 	if tx.Error != nil {
@@ -88,7 +90,7 @@ func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.
 	case common.GroupByMonth:
 		selectQuery = "to_char(date, 'YYYY-MM') as period, sum(clicks)"
 	default:
-		log.Printf("[StatRepository] Неверное значение для группировки: %s", by)
+		logger.Warn("Неверное значение для группировки", zap.String("groupBy", by))
 		return nil
 	}
 	r.Database.DB.
@@ -100,5 +102,6 @@ func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.
 		Order("period").
 		Scan(&stats)
 
+	logger.Info("Статистика успешно получена", zap.Int("statsCount", len(stats)))
 	return stats
 }

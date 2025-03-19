@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Stat стурктура представляет сущность статистики.
 type Stat struct {
 	gorm.Model
 	LinkID uint           `json:"link_id" gorm:"index"`

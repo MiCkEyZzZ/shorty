@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Link стурктура представляет сущность ссылки.
 type Link struct {
 	gorm.Model
 	Url   string `json:"url"`
@@ -15,6 +16,7 @@ type Link struct {
 	Stats []Stat `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 }
 
+// NewLink создание нового экземпляра ссылки.
 func NewLink(url string) *Link {
 	return &Link{
 		Url:  url,

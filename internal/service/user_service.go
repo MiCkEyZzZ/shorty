@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"shorty/internal/models"
 	"shorty/internal/repository"
+	"shorty/pkg/logger"
 )
 
 var (
@@ -32,9 +33,10 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 func (s *UserService) GetAll(ctx context.Context) ([]*models.User, error) {
 	users, err := s.Repo.GetUsers(ctx)
 	if err != nil {
-		log.Printf("[UserService] Ошибка при получении списка пользователей: %v", err)
+		logger.Error("Ошибка при получении списка пользователей", zap.Error(err))
 		return nil, fmt.Errorf("%w: %v", ErrUsersFound, err)
 	}
+	logger.Info("Список пользователей получен", zap.Int("count", len(users)))
 	return users, nil
 }
 
@@ -43,11 +45,13 @@ func (s *UserService) GetByID(ctx context.Context, userID uint) (*models.User, e
 	user, err := s.Repo.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("Пользователь не найден", zap.Uint("userID", userID))
 			return nil, ErrUserNotFound
 		}
-		log.Printf("[UserService] Ошибка при поиске пользователя (ID: %d): %v", userID, err)
+		logger.Error("Ошибка при поиске пользователя", zap.Uint("userID", userID), zap.Error(err))
 		return nil, fmt.Errorf("не удалось найти пользователя: %w", err)
 	}
+	logger.Info("Пользователь найден", zap.Uint("userID", user.ID), zap.String("email", user.Email))
 	return user, nil
 }
 
@@ -55,9 +59,10 @@ func (s *UserService) GetByID(ctx context.Context, userID uint) (*models.User, e
 func (s *UserService) Update(ctx context.Context, user *models.User) (*models.User, error) {
 	updatedUser, err := s.Repo.UpdateUser(ctx, user)
 	if err != nil {
-		log.Printf("[UserService] Ошибка при обновлении пользователя (ID: %d): %v", user.ID, err)
+		logger.Error("Ошибка при обновлении пользователя", zap.Uint("userID", user.ID), zap.Error(err))
 		return nil, fmt.Errorf("%w: %v", ErrUserUpdate, err)
 	}
+	logger.Info("Данные пользователя обновлены", zap.Uint("userID", updatedUser.ID), zap.String("email", updatedUser.Email))
 	return updatedUser, nil
 }
 
@@ -65,9 +70,9 @@ func (s *UserService) Update(ctx context.Context, user *models.User) (*models.Us
 func (s *UserService) Delete(ctx context.Context, userID uint) error {
 	err := s.Repo.DeleteUser(ctx, userID)
 	if err != nil {
-		log.Printf("[UserService] Ошибка удаления пользователя (ID: %d): %v", userID, err)
+		logger.Error("Ошибка удаления пользователя", zap.Uint("userID", userID), zap.Error(err))
 		return fmt.Errorf("%w: %v", ErrUserDeletion, err)
 	}
-	log.Printf("[UserService] Пользователь (ID: %d) успешно удалён", userID)
+	logger.Info("Пользователь успешно удалён", zap.Uint("userID", userID))
 	return nil
 }

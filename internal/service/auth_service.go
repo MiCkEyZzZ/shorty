@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"shorty/internal/models"
 	"shorty/internal/repository"
+	"shorty/pkg/logger"
 )
 
 var (
@@ -32,16 +33,17 @@ func NewAuthService(repo *repository.UserRepository) *AuthService {
 func (s *AuthService) Registration(ctx context.Context, name, email, password string) (string, error) {
 	exists, err := s.Repo.GetUserByEmail(ctx, email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Printf("[AuthService] Ошибка при поиске пользователя: %v", err)
+		logger.Error("Ошибка при поиске пользователя", zap.Error(err))
 		return "", fmt.Errorf("%w: %v", ErrAuthNotFound, err)
 	}
 	if exists != nil {
+		logger.Warn("Пользователь с таким email уже зарегистрирован", zap.String("email", email))
 		return "", fmt.Errorf("пользователь с email %s уже зарегистрирован", email)
 	}
 
 	hashedPassword, err := models.Hash(password)
 	if err != nil {
-		log.Printf("[AuthService] Ошибка хеширования пароля: %v", err)
+		logger.Error("Ошибка хеширования пароля", zap.Error(err))
 		return "", fmt.Errorf("не удалось хешировать пароль: %w", err)
 	}
 
@@ -52,9 +54,10 @@ func (s *AuthService) Registration(ctx context.Context, name, email, password st
 	}
 	_, err = s.Repo.CreateUser(ctx, user)
 	if err != nil {
-		log.Printf("[AuthService] Ошибка при создании нового пользователя: %v", err)
+		logger.Error("Ошибка при создании нового пользователя", zap.Error(err))
 		return "", fmt.Errorf("%w: %v", ErrAuthCreation, err)
 	}
+	logger.Info("Новый пользователь зарегистрирован", zap.String("email", user.Email))
 	return user.Email, nil
 }
 
@@ -63,16 +66,18 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 	exists, err := s.Repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			logger.Warn("Неверные учетные данные при входе", zap.String("email", email))
 			return "", ErrAuthWrongCredential
 		}
-		log.Printf("[AuthService] Ошибка при поиске пользователя: %v", err)
+		logger.Error("Ошибка при поиске пользователя", zap.Error(err))
 		return "", fmt.Errorf("ошибка при получении пользователя: %w", err)
 	}
 
 	err = models.VerifyPassword(exists.Password, password)
 	if err != nil {
-		log.Printf("[AuthService] Ошибка при сравнении паролей: %v", err)
+		logger.Error("Ошибка при поиске пользователя", zap.Error(err))
 		return "", ErrAuthWrongCredential
 	}
+	logger.Info("Пользователь успешно авторизован", zap.String("email", email))
 	return exists.Email, nil
 }

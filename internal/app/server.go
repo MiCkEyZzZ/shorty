@@ -46,7 +46,8 @@ func (s *Server) Start(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
 	go func() {
-		fmt.Printf("Сервер запущен на %s", s.httpServer.Addr)
+		fmt.Printf("Сервер запущен на %s\n", s.httpServer.Addr)
+		fmt.Println()
 		errChan <- s.httpServer.ListenAndServe()
 	}()
 

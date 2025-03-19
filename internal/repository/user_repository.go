@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"shorty/internal/models"
 	"shorty/pkg/db"
+	"shorty/pkg/logger"
 )
 
 // UserRepository отвечает за операции с базой данных для сущности User.
@@ -26,9 +27,10 @@ func NewUserRepository(db *db.DB) *UserRepository {
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	res := r.Database.DB.WithContext(ctx).Create(user)
 	if res.Error != nil {
-		log.Printf("[UserRepository] Ошибка создания пользователя: %v", res.Error)
+		logger.Error("Ошибка создания пользователя", zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при сохранении пользователя в БД: %w", res.Error)
 	}
+	logger.Info("Пользователь успешно создан", zap.String("email", user.Email), zap.Uint("userID", user.ID))
 	return user, nil
 }
 
@@ -37,9 +39,10 @@ func (r *UserRepository) GetUsers(ctx context.Context) ([]*models.User, error) {
 	var users []*models.User
 	res := r.Database.DB.WithContext(ctx).Find(&users)
 	if res.Error != nil {
-		log.Printf("[UserRepository] Ошибка при получении списка пользователей: %v", res.Error)
+		logger.Error("Ошибка при получении списка пользователей", zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при получении списка пользователей: %w", res.Error)
 	}
+	logger.Info("Получен список пользователей", zap.Int("usersCount", len(users)))
 	return users, nil
 }
 
@@ -49,12 +52,13 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID uint) (*models.
 	res := r.Database.DB.WithContext(ctx).First(&user, userID)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			log.Printf("[UserRepository] Пользователь с ID %d не найден", userID)
+			logger.Warn("Пользователь не найден по ID", zap.Uint("userID", userID))
 			return nil, fmt.Errorf("пользователь с ID %d не найден", userID)
 		}
-		log.Printf("[UserRepository] Ошибка при поиске пользователя (ID: %d): %v", userID, res.Error)
+		logger.Error("Ошибка при поиске пользователя по ID", zap.Uint("userID", userID), zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при поиске пользователя: %w", res.Error)
 	}
+	logger.Info("Пользователь найден по ID", zap.Uint("userID", userID), zap.String("email", user.Email))
 	return &user, nil
 }
 
@@ -67,12 +71,13 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 		First(&user)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			log.Printf("[UserRepository] Пользователь с email %s не найден", email)
+			logger.Warn("Пользователь не найден по email", zap.String("email", email))
 			return nil, nil
 		}
-		log.Printf("[UserRepository] Ошибка при поиске пользователя (email: %s): %v", email, res.Error)
+		logger.Error("Ошибка при поиске пользователя по email", zap.String("email", email), zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при поиске пользователя: %w", res.Error)
 	}
+	logger.Info("Пользователь найден по email", zap.String("email", email))
 	return &user, nil
 }
 
@@ -84,13 +89,14 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User) (*mo
 		Where("id = ?", user.ID).
 		Updates(user)
 	if res.Error != nil {
-		log.Printf("[UserRepository] Ошибка обновления пользователя (ID: %d): %v", user.ID, res.Error)
+		logger.Error("Ошибка обновления пользователя", zap.Uint("userID", user.ID), zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при обновлении пользователя в БД: %w", res.Error)
 	}
 	if res.RowsAffected == 0 {
-		log.Printf("[UserRepository] Пользователь с ID %d не найден для обновления", user.ID)
+		logger.Warn("Пользователь не найден для обновления", zap.Uint("userID", user.ID))
 		return nil, fmt.Errorf("пользователь с ID %d не найден", user.ID)
 	}
+	logger.Info("Пользователь успешно обновлен", zap.Uint("userID", user.ID))
 	return user, nil
 }
 
@@ -98,12 +104,16 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User) (*mo
 func (r *UserRepository) DeleteUser(ctx context.Context, userID uint) error {
 	res := r.Database.DB.WithContext(ctx).Delete(&models.User{}, userID)
 	if res.Error != nil {
-		log.Printf("[UserRepository] Ошибка удаления пользователя (ID: %d): %v", userID, res.Error)
+		logger.Error("Ошибка удаления пользователя", zap.Uint("userID", userID), zap.Error(res.Error))
 		return fmt.Errorf("ошибка при удалении пользователя из БД: %w", res.Error)
 	}
 	if res.RowsAffected == 0 {
-		log.Printf("[UserRepository] Пользователь с ID %d не найден для удаления", userID)
+		logger.Warn("Пользователь не найден для удаления", zap.Uint("userID", userID))
 		return fmt.Errorf("пользователь с ID %d не найден", userID)
 	}
+	logger.Info("Пользователь успешно удален", zap.Uint("userID", userID))
 	return nil
 }
+
+// BlockUsers блокирует пользователя.
+func (r *UserRepository) BlockUsers(ctx context.Context, userID uint) {}

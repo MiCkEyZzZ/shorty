@@ -5,12 +5,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// User структура произвольного пользователя.
+type Role string
+
+const (
+	RoleUser  Role = "user"
+	RoleAdmin Role = "admin"
+)
+
+// User стурктура представляет сущность пользователя.
 type User struct {
 	gorm.Model
 	Name     string
 	Email    string `gorm:"index"`
 	Password string
+	Role     Role `json:"role"`
 }
 
 // Hash ф-я для хеширования пароля.

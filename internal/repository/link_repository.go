@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"shorty/internal/models"
 	"shorty/pkg/db"
+	"shorty/pkg/logger"
 )
 
 // LinkRepository отвечает за операции с базой данных для сущности Link.
@@ -27,9 +28,10 @@ func NewLinkRepository(db *db.DB) *LinkRepository {
 func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).Create(link)
 	if res.Error != nil {
-		log.Printf("[LinkRepository] Ошибка создания ссылки: %v", res.Error)
+		logger.Error("Ошибка создания ссылки", zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при сохранении ссылки в БД: %w", res.Error)
 	}
+	logger.Info("Ссылка успешно создана", zap.Uint("linkID", link.ID))
 	return link, nil
 }
 
@@ -45,9 +47,10 @@ func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) ([]mod
 		Offset(offset).
 		Find(&links)
 	if res.Error != nil {
-		log.Printf("[LinkRepository] Ошибка получения списка ссылок: %v", res.Error)
+		logger.Error("Ошибка получения списка ссылок", zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при получении списка ссылок: %w", res.Error)
 	}
+	logger.Info("Получено ссылок", zap.Int("count", len(links)))
 	return links, nil
 }
 
@@ -59,9 +62,10 @@ func (r *LinkRepository) GetLinkHash(ctx context.Context, hash string) (*models.
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
-		log.Printf("[LinkRepository] Ошибка поиска ссылки: %v", res.Error)
+		logger.Error("Ошибка поиска ссылки", zap.String("hash", hash), zap.Error(res.Error))
 		return nil, res.Error
 	}
+	logger.Info("Ссылка найдена по хэшу", zap.String("hash", hash), zap.Uint("linkID", link.ID))
 	return &link, nil
 }
 
@@ -69,22 +73,25 @@ func (r *LinkRepository) GetLinkHash(ctx context.Context, hash string) (*models.
 func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).Clauses(clause.Returning{}).Updates(link)
 	if res.Error != nil {
-		log.Printf("[LinkRepository] Ошибка обновления ссылки (ID: %d): %v", link.ID, res.Error)
+		logger.Error("Ошибка обновления ссылки", zap.Uint("linkID", link.ID), zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при обновлении ссылки в БД: %w", res.Error)
 	}
+	logger.Info("Ссылка успешно обновлена", zap.Uint("linkID", link.ID))
 	return link, nil
 }
 
-// DeleteLink удаляет ссылку по ID.
+// DeleteLink удаляет ссылку по идентификатору.
 func (r *LinkRepository) DeleteLink(ctx context.Context, linkID uint) error {
 	res := r.Database.DB.WithContext(ctx).Delete(&models.Link{}, linkID)
 	if res.Error != nil {
-		log.Printf("[LinkRepository] Ошибка удаления ссылки (ID: %d): %v", linkID, res.Error)
+		logger.Error("Ошибка удаления ссылки", zap.Uint("linkID", linkID), zap.Error(res.Error))
 		return fmt.Errorf("ошибка при удалении ссылки из БД: %w", res.Error)
 	}
 	if res.RowsAffected == 0 {
+		logger.Warn("Ссылка не найдена для удаления", zap.Uint("linkID", linkID))
 		return fmt.Errorf("ссылка с ID %d не найдена", linkID)
 	}
+	logger.Info("Ссылка успешно удалена", zap.Uint("linkID", linkID))
 	return nil
 }
 
@@ -97,23 +104,28 @@ func (r *LinkRepository) CountLink(ctx context.Context) (int64, error) {
 		Where("deleted_at IS NULL").
 		Count(&count)
 	if res.Error != nil {
-		log.Printf("[LinkRepository] Ошибка подсчёта ссылок: %v", res.Error)
+		logger.Error("Ошибка подсчёта ссылок", zap.Error(res.Error))
 		return 0, fmt.Errorf("ошибка при подсчёте ссылок: %w", res.Error)
 	}
+	logger.Info("Количество ссылок", zap.Int64("count", count))
 	return count, nil
 }
 
-// FindLinkByID ищет ссылку по ID.
+// FindLinkByID ищет ссылку по идентификатору.
 func (r *LinkRepository) FindLinkByID(ctx context.Context, linkID uint) (*models.Link, error) {
 	var link models.Link
 	res := r.Database.DB.WithContext(ctx).First(&link, linkID)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			log.Printf("[LinkRepository] Ссылка с ID %d не найдена", linkID)
+			logger.Warn("Ссылка не найдена", zap.Uint("linkID", linkID))
 			return nil, nil
 		}
-		log.Printf("[LinkRepository] Ошибка при поиске ссылки (ID: %d): %v", linkID, res.Error)
+		logger.Error("Ошибка при поиске ссылки", zap.Uint("linkID", linkID), zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при поиске ссылки: %w", res.Error)
 	}
+	logger.Info("Ссылка найдена", zap.Uint("linkID", linkID))
 	return &link, nil
 }
+
+// BlockLink блокирует ссылку по идентификатору.
+func (r *LinkRepository) BlockLink(ctx context.Context, linkID uint) {}
