@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -8,6 +9,10 @@ import (
 	"shorty/internal/config"
 	"shorty/internal/service"
 	"shorty/pkg/res"
+)
+
+var (
+	ErrInvalidParam = errors.New("неверный параметр")
 )
 
 // StatHandlerDeps - зависимости для создания экземпляра StatHandler
@@ -32,17 +37,17 @@ func (h *StatHandler) GetStats() http.HandlerFunc {
 		ctx := r.Context()
 		from, err := time.Parse("2006-01-02", r.URL.Query().Get("from"))
 		if err != nil {
-			http.Error(w, "Invalid from param", http.StatusBadRequest)
+			res.ERROR(w, ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
 		to, err := time.Parse("2006-01-02", r.URL.Query().Get("to"))
 		if err != nil {
-			http.Error(w, "Invalid to param", http.StatusBadRequest)
+			res.ERROR(w, ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
 		by := r.URL.Query().Get("by")
 		if by != common.GroupByDay && by != common.GroupByMonth {
-			http.Error(w, "Invalid by param", http.StatusBadRequest)
+			res.ERROR(w, ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
 		stats := h.Service.GetStats(ctx, by, from, to)
