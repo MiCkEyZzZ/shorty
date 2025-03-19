@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -10,6 +11,13 @@ import (
 	"shorty/pkg/jwt"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
+)
+
+var (
+	ErrMethodNotAllowed       = errors.New("метод не поддерживается")
+	ErrBadRequest             = errors.New("некорректный запрос")
+	ErrUserRegistrationFailed = errors.New("ошибка регистрации пользователя")
+	ErrAuthFailed             = errors.New("ошибка при авторизации")
 )
 
 // AuthHandlerDeps - зависимости для обработчика аутентификации.
@@ -39,28 +47,28 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if r.Method != http.MethodPost {
-			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+			res.ERROR(w, ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 			return
 		}
 
 		body, err := req.HandleBody[payload.SignupRequest](&w, r)
 		if err != nil {
 			log.Printf("[AuthHandler] Ошибка обработки тела запроса: %v", err)
-			http.Error(w, "Некорректный запрос", http.StatusBadRequest)
+			res.ERROR(w, ErrBadRequest, http.StatusBadRequest)
 			return
 		}
 
 		email, err := h.Service.Registration(ctx, body.Name, body.Email, body.Password)
 		if err != nil {
 			log.Printf("[AuthHandler] Ошибка регистрации: %v", err)
-			http.Error(w, "Ошибка регистрации пользователя", http.StatusInternalServerError)
+			res.ERROR(w, ErrUserRegistrationFailed, http.StatusInternalServerError)
 			return
 		}
 
 		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(jwt.JWTData{Email: email})
 		if err != nil {
 			log.Println("[AuthHandler] Ошибка при авторизации:", err)
-			http.Error(w, "ошибка при авторизации", http.StatusInternalServerError)
+			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
 		data := payload.SignupResponse{
@@ -75,27 +83,27 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if r.Method != http.MethodPost {
-			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+			res.ERROR(w, ErrMethodNotAllowed, http.StatusMethodNotAllowed)
 			return
 		}
 
 		body, err := req.HandleBody[payload.SigninRequest](&w, r)
 		if err != nil {
 			log.Println("[AuthHandler] Ошибка при разборе тела запроса:", err)
-			http.Error(w, "Некорректный запрос", http.StatusBadRequest)
+			res.ERROR(w, ErrBadRequest, http.StatusBadRequest)
 			return
 		}
 
 		email, err := h.Service.Login(ctx, body.Email, body.Password)
 		if err != nil {
 			log.Println("[AuthHandler] Ошибка при авторизации:", err)
-			http.Error(w, "ошибка при авторизации", http.StatusUnauthorized)
+			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
 		token, err := jwt.NewJWT(h.Config.Auth.Secret).Create(jwt.JWTData{Email: email})
 		if err != nil {
 			log.Println("[AuthHandler] Ошибка при авторизации:", err)
-			http.Error(w, "ошибка при авторизации", http.StatusInternalServerError)
+			res.ERROR(w, ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
 		data := payload.SinginResponse{

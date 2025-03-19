@@ -21,7 +21,7 @@ func JSON(w http.ResponseWriter, data interface{}, status int) {
 	}
 }
 
-// ERROR
+// ERROR отправляет JSON с сообщением об ошибке и статусом.
 func ERROR(w http.ResponseWriter, err error, statusCode int) {
 	if err != nil {
 		err = fmt.Errorf("неизвестная ошибка")
