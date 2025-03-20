@@ -9,6 +9,7 @@ import (
 	"shorty/internal/service"
 	"shorty/pkg/db"
 	"shorty/pkg/event"
+	"shorty/pkg/jwt"
 	"shorty/pkg/logger"
 	"shorty/pkg/middleware"
 )
@@ -41,6 +42,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 	userService := service.NewUserService(userRepository)
 	authService := service.NewAuthService(userRepository)
 	statService := service.NewStatService(&service.StatServiceDeps{EventBus: eventBus, Repo: statRepository})
+	jwtService := jwt.NewJWT(cfg.Auth.Secret)
 
 	// Промежуточное ПО.
 	stack := middleware.Chain(
@@ -49,7 +51,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 	)
 
 	// Создаём сервер с обработчиками.
-	server := NewServer(cfg, stack, authService, eventBus, linkService, statService, userService)
+	server := NewServer(cfg, stack, authService, eventBus, linkService, statService, userService, jwtService)
 
 	return &App{Server: server}, nil
 }

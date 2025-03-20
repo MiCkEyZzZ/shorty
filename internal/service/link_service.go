@@ -136,7 +136,7 @@ func (s *LinkService) Block(ctx context.Context, linkID uint) (*models.Link, err
 	return updatedLink, nil
 }
 
-// UnBlock разюлокирует ссылку
+// UnBlock разблокирует ссылку
 func (s *LinkService) UnBlock(ctx context.Context, linkID uint) (*models.Link, error) {
 	link, err := s.Repo.FindLinkByID(ctx, linkID)
 	if err != nil {

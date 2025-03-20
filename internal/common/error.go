@@ -18,6 +18,10 @@ var (
 	ErrBadRequest             = errors.New("неверный формат URL")
 	ErrUserRegistrationFailed = errors.New("ошибка регистрации пользователя")
 	ErrAuthFailed             = errors.New("ошибка при авторизации")
+	ErrUnauthorized           = errors.New("ощибка нет авторизации")
+	ErrInvalidToken           = errors.New("ощибка не валидный токен")
+	ErrForbidden              = errors.New("ощибка доступ запрещён")
+	UserContextKey            = errors.New("ощибка используй ключ")
 
 	// Ошибки пользователя.
 	ErrorGetUsers       = errors.New("не удалось получить список пользователей")

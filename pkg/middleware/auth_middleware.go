@@ -12,7 +12,7 @@ import (
 type key string
 
 const (
-	ContextEmailKey key = "ContextEmailKey"
+	ContextUserKey key = "ContextUserKey"
 )
 
 func writeUnauthorized(w http.ResponseWriter) {
@@ -28,14 +28,15 @@ func IsAuth(next http.Handler, cfg *config.Config) http.Handler {
 			return
 		}
 		token := strings.TrimPrefix(bearerToken, "Bearer ")
-		isValid, data := jwt.NewJWT(cfg.Auth.Secret).Parse(token)
-		if !isValid {
+
+		data, err := jwt.NewJWT(cfg.Auth.Secret).ParseToken(token)
+		if err != nil {
 			writeUnauthorized(w)
 			return
 		}
-		ctx := context.WithValue(r.Context(), ContextEmailKey, data.Email)
-		req := r.WithContext(ctx)
 
+		ctx := context.WithValue(r.Context(), ContextUserKey, data)
+		req := r.WithContext(ctx)
 		next.ServeHTTP(w, req)
 	})
 }

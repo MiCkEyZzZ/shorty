@@ -101,7 +101,6 @@ func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.
 		Group("period").
 		Order("period").
 		Scan(&stats)
-
 	logger.Info("Статистика успешно получена", zap.Int("statsCount", len(stats)))
 	return stats
 }

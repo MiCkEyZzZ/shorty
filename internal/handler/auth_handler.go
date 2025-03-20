@@ -56,23 +56,24 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 			return
 		}
 
-		email, err := h.AuthService.Registration(ctx, body.Name, body.Email, body.Password, body.Role, body.IsBlocked)
+		user, err := h.AuthService.Registration(ctx, body.Name, body.Email, body.Password, body.Role, body.IsBlocked)
 		if err != nil {
 			logger.Error("Ошибка регистрации пользователя", zap.String("email", body.Email), zap.Error(err))
 			res.ERROR(w, common.ErrUserRegistrationFailed, http.StatusInternalServerError)
 			return
 		}
 
-		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(jwt.JWTData{Email: email})
+		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(user)
 		if err != nil {
-			logger.Error("Ошибка при создании токена", zap.String("email", email), zap.Error(err))
+			logger.Error("Ошибка при создании токена", zap.String("email", user.Email), zap.Error(err))
 			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
+
 		data := payload.SignupResponse{
 			Token: token,
 		}
-		logger.Info("Пользователь успешно зарегистрирован", zap.String("email", body.Email))
+		logger.Info("Пользователь успешно зарегистрирован", zap.String("email", user.Email))
 		res.JSON(w, data, http.StatusOK)
 	}
 }
@@ -94,18 +95,20 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 			return
 		}
 
-		email, err := h.AuthService.Login(ctx, body.Email, body.Password, body.Role)
+		user, err := h.AuthService.Login(ctx, body.Email, body.Password, body.Role)
 		if err != nil {
 			logger.Error("Ошибка авторизации пользователя", zap.String("email", body.Email), zap.Error(err))
 			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
-		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(jwt.JWTData{Email: email})
+
+		token, err := jwt.NewJWT(h.Config.Auth.Secret).CreateToken(user)
 		if err != nil {
-			logger.Error("Ошибка при создании токена для авторизованного пользователя", zap.String("email", email), zap.Error(err))
+			logger.Error("Ошибка при создании токена для авторизованного пользователя", zap.String("email", user.Email), zap.Error(err))
 			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)
 			return
 		}
+
 		data := payload.SinginResponse{
 			Token: token,
 		}

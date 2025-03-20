@@ -15,6 +15,7 @@ import (
 	"shorty/internal/service"
 	"shorty/pkg/event"
 	"shorty/pkg/logger"
+	"shorty/pkg/middleware"
 	"shorty/pkg/parse"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
@@ -46,15 +47,15 @@ func NewUserHandler(router *http.ServeMux, deps UserHandlerDeps) {
 	}
 
 	// Управление пользователями.
-	router.HandleFunc("PATCH /users/{id}", handler.Update())
-	router.HandleFunc("DELETE /users/{id}", handler.Delete())
+	router.Handle("PATCH /users/{id}", middleware.IsAuth(handler.Update(), deps.Config))
+	router.Handle("DELETE /users/{id}", middleware.IsAuth(handler.Delete(), deps.Config))
 
 	// Управление ссылками.
 	router.HandleFunc("POST /users/links", handler.CreateLink())
-	router.HandleFunc("GET /users/links", handler.GetLinks())
-	router.HandleFunc("PATCH /users/links/{id}", handler.UpdateLink())
-	router.HandleFunc("DELETE /users/links/{id}", handler.DeleteLink())
-	router.HandleFunc("GET /users/links/{hash}", handler.Redirect())
+	router.Handle("GET /users/links", middleware.IsAuth(handler.GetLinks(), deps.Config))
+	router.Handle("PATCH /users/links/{id}", middleware.IsAuth(handler.UpdateLink(), deps.Config))
+	router.Handle("DELETE /users/links/{id}", middleware.IsAuth(handler.DeleteLink(), deps.Config))
+	router.Handle("GET /users/links/{hash}", middleware.IsAuth(handler.Redirect(), deps.Config))
 }
 
 // Update метод для обновления пользователя.

@@ -10,6 +10,7 @@ import (
 	"shorty/internal/handler"
 	"shorty/internal/service"
 	"shorty/pkg/event"
+	"shorty/pkg/jwt"
 	"shorty/pkg/logger"
 )
 
@@ -25,6 +26,7 @@ func NewServer(
 	linkService *service.LinkService,
 	statService *service.StatService,
 	userService *service.UserService,
+	jwtService *jwt.JWT,
 ) *Server {
 	router := http.NewServeMux()
 
@@ -34,14 +36,11 @@ func NewServer(
 		UserService: userService,
 		LinkService: linkService,
 		StatService: statService,
+		JWTService:  jwtService,
 	})
 	handler.NewAuthHandler(router, handler.AuthHandlerDeps{
 		Config:      cfg,
 		AuthService: authService,
-	})
-	handler.NewStatHandler(router, handler.StatHandlerDeps{
-		Config:  cfg,
-		Service: statService,
 	})
 	handler.NewUserHandler(router, handler.UserHandlerDeps{
 		Config:      cfg,

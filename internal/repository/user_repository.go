@@ -116,7 +116,34 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userID uint) error {
 }
 
 // BlockUsers метод для блокировки пользователя.
-func (r *UserRepository) BlockUsers(ctx context.Context, userID uint) {}
+func (r *UserRepository) BlockUsers(ctx context.Context, user *models.User) (*models.User, error) {
+	res := r.Database.DB.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ?", user.ID).
+		Updates(map[string]interface{}{
+			"is_blocked": user.IsBlocked,
+		})
+	if res.Error != nil {
+		logger.Error("Ошибка при обновлении пользователя", zap.Uint("id", user.ID), zap.Error(res.Error))
+		return nil, fmt.Errorf("ошибка при обновлении ссылки: %w", res.Error)
+	}
+	logger.Info("Пользователь обновлён", zap.Uint("id", user.ID), zap.Bool("is_blocked", user.IsBlocked))
+	return user, nil
+}
 
 // UnBlockUsers метод для разблокировки пользователя.
-func (r *UserRepository) UnBlockUsers(ctx context.Context, userID uint) {}
+func (r *UserRepository) UnBlockUsers(ctx context.Context, user *models.User) (*models.User, error) {
+	res := r.Database.DB.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ?", user.ID).
+		Updates(map[string]interface{}{
+			"is_blocked": user.IsBlocked,
+		})
+	if res.Error != nil {
+		logger.Error("Ошибка снятие блокировки с пользователя", zap.Uint("id", user.ID), zap.Error(res.Error))
+		return nil, fmt.Errorf("ошибка при снятии блокировки c пользователя: %w", res.Error)
+	}
+
+	logger.Info("Пользователь разблокирована", zap.Uint("id", user.ID), zap.Bool("is_blocked", user.IsBlocked))
+	return user, nil
+}

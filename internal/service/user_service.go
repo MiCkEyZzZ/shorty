@@ -79,7 +79,38 @@ func (s *UserService) Delete(ctx context.Context, userID uint) error {
 }
 
 // Block метод для блокировки пользователя по идентификатору.
-func (s *UserService) Block(ctx context.Context, userID uint) {}
+func (s *UserService) Block(ctx context.Context, userID uint) (*models.User, error) {
+	user, err := s.Repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+
+	user.IsBlocked = true
+	updatedUser, err := s.Repo.BlockUsers(ctx, user)
+	if err != nil {
+		logger.Error("Ошибка блокировки пользователя", zap.Uint("id", userID), zap.Error(err))
+		return nil, ErrLinkUpdate
+	}
+	return updatedUser, nil
+}
 
 // UnBlock метод для разблокировки пользователя по идентификатору.
-func (s *UserService) UnBlock(ctx context.Context, userID uint) {}
+func (s *UserService) UnBlock(ctx context.Context, userID uint) (*models.User, error) {
+	user, err := s.Repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrLinkNotFound
+	}
+	user.IsBlocked = false
+	updatedUser, err := s.Repo.UnBlockUsers(ctx, user)
+	if err != nil {
+		logger.Error("Ошибка при снятии блокировки с пользователя", zap.Uint("id", userID), zap.Error(err))
+		return nil, ErrLinkUpdate
+	}
+	return updatedUser, nil
+}
