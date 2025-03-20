@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -41,10 +40,8 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.HandleFunc("GET /admin/stats", middleware.AdminOnly(handler.GetStats()))
 
 	// Управление пользователями.
-	router.HandleFunc("/admin/users", middleware.AdminOnly(handler.GetUsers()))
-	// router.HandleFunc("GET /admin/users", handler.GetUsers())
-
-	router.HandleFunc("GET /admin/users/{id}", middleware.AdminOnly(handler.GetUser()))
+	router.HandleFunc("/admin/users", handler.GetUsers())
+	router.HandleFunc("GET /admin/users/{id}", handler.GetUser())
 	router.HandleFunc("PATCH /admin/users/{id}", middleware.AdminOnly(handler.UpdateUser()))
 	router.HandleFunc("DELETE /admin/users/{id}", middleware.AdminOnly(handler.DeleteUser()))
 	router.HandleFunc("PATCH /admin/users/{id}/block", middleware.AdminOnly(handler.BlockUser()))
@@ -59,19 +56,42 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 func (a *AdminHandler) GetStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Логика для получения статистики
-		fmt.Println("Hi there!")
 	}
 }
 
 func (a *AdminHandler) GetUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Логика для получения статистики
+		ctx := r.Context()
+		users, err := a.UserService.GetAll(ctx)
+		if err != nil {
+			logger.Error("Ошибка получения списка пользователей", zap.Error(err))
+			res.ERROR(w, ErrorGetUsers, http.StatusInternalServerError)
+			return
+		}
+		logger.Info("Список пользователей успешно получен", zap.Int("count", len(users)))
+		res.JSON(w, users, http.StatusOK)
+
 	}
 }
 
 func (a *AdminHandler) GetUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Логика для получения статистики
+		ctx := r.Context()
+		id := r.PathValue("id")
+		userID, err := strconv.Atoi(id)
+		if err != nil {
+			logger.Error("Некорректный идентификатор пользователя", zap.String("id", id), zap.Error(err))
+			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
+			return
+		}
+		user, err := a.UserService.GetByID(ctx, uint(userID))
+		if err != nil {
+			logger.Error("Ошибка поиска пользователя", zap.Int("userID", userID), zap.Error(err))
+			res.ERROR(w, ErrUserNotFound, http.StatusNotFound)
+			return
+		}
+		logger.Info("Пользователь найден", zap.Int("id", userID))
+		res.JSON(w, user, http.StatusOK)
 	}
 }
 
