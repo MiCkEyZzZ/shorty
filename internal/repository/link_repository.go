@@ -24,7 +24,7 @@ func NewLinkRepository(db *db.DB) *LinkRepository {
 	return &LinkRepository{Database: db}
 }
 
-// CreateLink добавляет новую ссылку в базу данных.
+// CreateLink метод для создания новой ссылки.
 func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).Create(link)
 	if res.Error != nil {
@@ -35,7 +35,7 @@ func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*mo
 	return link, nil
 }
 
-// GetLinks получает список ссылок с пагинацией.
+// GetLinks метод для получения списка ссылок с пагинацией.
 func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) ([]models.Link, error) {
 	var links []models.Link
 	res := r.Database.DB.
@@ -54,7 +54,7 @@ func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) ([]mod
 	return links, nil
 }
 
-// GetLinkHash ищет ссылку по хэшу.
+// GetLinkHash метод для поиска ссылки по хэшу.
 func (r *LinkRepository) GetLinkHash(ctx context.Context, hash string) (*models.Link, error) {
 	var link models.Link
 	res := r.Database.DB.WithContext(ctx).First(&link, "hash = ?", hash)
@@ -69,7 +69,7 @@ func (r *LinkRepository) GetLinkHash(ctx context.Context, hash string) (*models.
 	return &link, nil
 }
 
-// UpdateLink обновляет данные ссылки в базе.
+// UpdateLink метод для обновления ссылки.
 func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).Clauses(clause.Returning{}).Updates(link)
 	if res.Error != nil {
@@ -80,7 +80,7 @@ func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*mo
 	return link, nil
 }
 
-// DeleteLink удаляет ссылку по идентификатору.
+// DeleteLink метод для удаления ссылки по идентификатору.
 func (r *LinkRepository) DeleteLink(ctx context.Context, linkID uint) error {
 	res := r.Database.DB.WithContext(ctx).Delete(&models.Link{}, linkID)
 	if res.Error != nil {
@@ -95,7 +95,7 @@ func (r *LinkRepository) DeleteLink(ctx context.Context, linkID uint) error {
 	return nil
 }
 
-// CountLink возвращает количество ссылок в базе.
+// CountLink метод для возврата количества ссылок.
 func (r *LinkRepository) CountLink(ctx context.Context) (int64, error) {
 	var count int64
 	res := r.Database.DB.
@@ -111,7 +111,7 @@ func (r *LinkRepository) CountLink(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-// FindLinkByID ищет ссылку по идентификатору.
+// FindLinkByID метод для поиска ссылок по идентификатору.
 func (r *LinkRepository) FindLinkByID(ctx context.Context, linkID uint) (*models.Link, error) {
 	var link models.Link
 	res := r.Database.DB.WithContext(ctx).First(&link, linkID)
@@ -127,7 +127,7 @@ func (r *LinkRepository) FindLinkByID(ctx context.Context, linkID uint) (*models
 	return &link, nil
 }
 
-// BlockLink блокирует ссылку по идентификатору.
+// BlockLink метод для блокировки ссылки по идентификатору.
 func (r *LinkRepository) BlockLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).
 		Model(&models.Link{}).
@@ -145,7 +145,7 @@ func (r *LinkRepository) BlockLink(ctx context.Context, link *models.Link) (*mod
 	return link, nil
 }
 
-// UnBlockLink заблокирует ссылку по идентификатору.
+// UnBlockLink метод для разблокировки ссылки по идентификатору.
 func (r *LinkRepository) UnBlockLink(ctx context.Context, link *models.Link) (*models.Link, error) {
 	res := r.Database.DB.WithContext(ctx).
 		Model(&models.Link{}).

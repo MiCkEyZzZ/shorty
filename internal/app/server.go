@@ -29,10 +29,11 @@ func NewServer(
 	router := http.NewServeMux()
 
 	// Обработчики.
-	handler.NewLinkHandler(router, handler.LinkHandlerDeps{
+	handler.NewAdminHandler(router, handler.AdminHandlerDeps{
 		Config:      cfg,
+		UserService: userService,
 		LinkService: linkService,
-		EventBus:    eventBus,
+		StatService: statService,
 	})
 	handler.NewAuthHandler(router, handler.AuthHandlerDeps{
 		Config:      cfg,
@@ -42,15 +43,11 @@ func NewServer(
 		Config:  cfg,
 		Service: statService,
 	})
-	handler.NewAdminHandler(router, handler.AdminHandlerDeps{
-		Config:      cfg,
-		UserService: userService,
-		LinkService: linkService,
-		StatService: statService,
-	})
 	handler.NewUserHandler(router, handler.UserHandlerDeps{
 		Config:      cfg,
 		UserService: userService,
+		LinkService: linkService,
+		EventBus:    eventBus,
 	})
 
 	server := &http.Server{

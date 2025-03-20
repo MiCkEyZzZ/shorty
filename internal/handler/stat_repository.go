@@ -45,7 +45,6 @@ func (h *StatHandler) GetStats() http.HandlerFunc {
 			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
-
 		toStr := r.URL.Query().Get("to")
 		to, err := time.Parse("2006-01-02", toStr)
 		if err != nil {
@@ -53,19 +52,15 @@ func (h *StatHandler) GetStats() http.HandlerFunc {
 			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
-
 		by := r.URL.Query().Get("by")
 		if by != common.GroupByDay && by != common.GroupByMonth {
 			logger.Error("Неверное значение параметра 'by'", zap.String("by", by))
 			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
-
 		logger.Info("Получение статистики", zap.String("by", by), zap.Time("from", from), zap.Time("to", to))
-
 		stats := h.Service.GetStats(ctx, by, from, to)
 		logger.Info("Статистика успешно получена", zap.Int("record_count", len(stats)))
-
 		res.JSON(w, stats, http.StatusOK)
 	}
 }

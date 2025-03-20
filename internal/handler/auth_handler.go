@@ -33,6 +33,8 @@ func NewAuthHandler(router *http.ServeMux, deps AuthHandlerDeps) {
 		Config:      deps.Config,
 		AuthService: deps.AuthService,
 	}
+
+	// Управление авторизацией.
 	router.HandleFunc("POST /auth/signup", handler.SignUp())
 	router.HandleFunc("POST /auth/signin", handler.SignIn())
 }

@@ -20,11 +20,13 @@ type StatServiceDeps struct {
 	EventBus *event.EventBus
 }
 
+// StatService предоставляет методы для работы с статистикой.
 type StatService struct {
 	Repo     *repository.StatRepository
 	EventBus *event.EventBus
 }
 
+// NewUserService создаёт новый экземпляр StatService.
 func NewStatService(deps *StatServiceDeps) *StatService {
 	ctx := context.Background()
 	service := &StatService{Repo: deps.Repo, EventBus: deps.EventBus}
@@ -49,6 +51,7 @@ func (s *StatService) AddClick(ctx context.Context) {
 	}
 }
 
+// GetStats метод для получения статистики.
 func (s *StatService) GetStats(ctx context.Context, by string, from, to time.Time) []payload.GetStatsResponse {
 	logger.Info("Запрос статистики", zap.String("by", by), zap.Time("from", from), zap.Time("to", to))
 	stats := s.Repo.GetStats(ctx, by, from, to)

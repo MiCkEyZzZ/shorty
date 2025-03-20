@@ -20,12 +20,12 @@ type StatRepository struct {
 	Database *db.DB
 }
 
-// NewStatRepository создает новый экземпляр StatRepository
+// NewStatRepository создаёт новый экземпляр StatRepository.
 func NewStatRepository(db *db.DB) *StatRepository {
 	return &StatRepository{Database: db}
 }
 
-// AddClick инкрементирует количество кликов для ссылки на текущую дату
+// AddClick метод для инкрементации количества кликов для ссылки на текущую дату.
 func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
 	var stat models.Stat
 	currentDate := datatypes.Date(time.Now())
@@ -78,7 +78,7 @@ func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
 	return tx.Commit().Error
 }
 
-// GetStats получает статистику по дням или месяцам за заданный период
+// GetStats метод для получения статистики по дням или месяцам за заданный период.
 func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.Time) []payload.GetStatsResponse {
 	var stats []payload.GetStatsResponse
 	var selectQuery string

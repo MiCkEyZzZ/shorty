@@ -21,6 +21,7 @@ var (
 	ErrLinkNotValid = errors.New("ссылка некорректна")
 )
 
+// LinkService предоставляет методы для работы с ссылками.
 type LinkService struct {
 	Repo *repository.LinkRepository
 }

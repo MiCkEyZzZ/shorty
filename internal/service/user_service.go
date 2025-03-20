@@ -20,16 +20,17 @@ var (
 	ErrUserDeletion = errors.New("не удалось удалить пользователя")
 )
 
+// UserService предоставляет методы для работы с пользователем.
 type UserService struct {
 	Repo *repository.UserRepository
 }
 
-// NewUserService создаёт новый экземпляр UserService
+// NewUserService создаёт новый экземпляр UserService.
 func NewUserService(repo *repository.UserRepository) *UserService {
 	return &UserService{Repo: repo}
 }
 
-// GetAll возвращает список всех пользователей
+// GetAll метод для получения списка пользователей.
 func (s *UserService) GetAll(ctx context.Context) ([]*models.User, error) {
 	users, err := s.Repo.GetUsers(ctx)
 	if err != nil {
@@ -40,7 +41,7 @@ func (s *UserService) GetAll(ctx context.Context) ([]*models.User, error) {
 	return users, nil
 }
 
-// GetByID ищет пользователя по ID
+// GetByID метод для получения пользователя по идентификатору.
 func (s *UserService) GetByID(ctx context.Context, userID uint) (*models.User, error) {
 	user, err := s.Repo.GetUserByID(ctx, userID)
 	if err != nil {
@@ -55,7 +56,7 @@ func (s *UserService) GetByID(ctx context.Context, userID uint) (*models.User, e
 	return user, nil
 }
 
-// Update обновляет данные пользователя
+// Update метод для обновления пользователя.
 func (s *UserService) Update(ctx context.Context, user *models.User) (*models.User, error) {
 	updatedUser, err := s.Repo.UpdateUser(ctx, user)
 	if err != nil {
@@ -66,7 +67,7 @@ func (s *UserService) Update(ctx context.Context, user *models.User) (*models.Us
 	return updatedUser, nil
 }
 
-// Delete удаляет пользователя по ID
+// Delete метод для удаления пользователя по идентификатору.
 func (s *UserService) Delete(ctx context.Context, userID uint) error {
 	err := s.Repo.DeleteUser(ctx, userID)
 	if err != nil {
@@ -76,3 +77,9 @@ func (s *UserService) Delete(ctx context.Context, userID uint) error {
 	logger.Info("Пользователь успешно удалён", zap.Uint("userID", userID))
 	return nil
 }
+
+// Block метод для блокировки пользователя по идентификатору.
+func (s *UserService) Block(ctx context.Context, userID uint) {}
+
+// UnBlock метод для разблокировки пользователя по идентификатору.
+func (s *UserService) UnBlock(ctx context.Context, userID uint) {}

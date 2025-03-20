@@ -18,12 +18,12 @@ type UserRepository struct {
 	Database *db.DB
 }
 
-// NewUserRepository создает новый экземпляр UserRepository
+// NewUserRepository создаёт новый экземпляр UserRepository
 func NewUserRepository(db *db.DB) *UserRepository {
 	return &UserRepository{Database: db}
 }
 
-// CreateUser добавляет нового пользователя в базу данных
+// CreateUser метод для создания нового пользователя.
 func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	res := r.Database.DB.WithContext(ctx).Create(user)
 	if res.Error != nil {
@@ -34,7 +34,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) (*mo
 	return user, nil
 }
 
-// GetUsers получает всех пользователей из базы
+// GetUsers метод для получения списка пользователей.
 func (r *UserRepository) GetUsers(ctx context.Context) ([]*models.User, error) {
 	var users []*models.User
 	res := r.Database.DB.WithContext(ctx).Find(&users)
@@ -46,7 +46,7 @@ func (r *UserRepository) GetUsers(ctx context.Context) ([]*models.User, error) {
 	return users, nil
 }
 
-// GetUserByID ищет пользователя по ID
+// GetUserByID метод для поиска пользователя по идентификатору.
 func (r *UserRepository) GetUserByID(ctx context.Context, userID uint) (*models.User, error) {
 	var user models.User
 	res := r.Database.DB.WithContext(ctx).First(&user, userID)
@@ -62,7 +62,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, userID uint) (*models.
 	return &user, nil
 }
 
-// GetUserByEmail ищет пользователя по email
+// GetUserByEmail метод для поиска пользователя по адресу электронной почты.
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
 	res := r.Database.DB.
@@ -81,7 +81,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	return &user, nil
 }
 
-// UpdateUser обновляет данные пользователя
+// UpdateUser метод для обновления данных пользователя.
 func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	res := r.Database.DB.
 		WithContext(ctx).
@@ -100,7 +100,7 @@ func (r *UserRepository) UpdateUser(ctx context.Context, user *models.User) (*mo
 	return user, nil
 }
 
-// DeleteUser удаляет пользователя из базы
+// DeleteUser метод для удаления пользователя.
 func (r *UserRepository) DeleteUser(ctx context.Context, userID uint) error {
 	res := r.Database.DB.WithContext(ctx).Delete(&models.User{}, userID)
 	if res.Error != nil {
@@ -115,5 +115,8 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userID uint) error {
 	return nil
 }
 
-// BlockUsers блокирует пользователя.
+// BlockUsers метод для блокировки пользователя.
 func (r *UserRepository) BlockUsers(ctx context.Context, userID uint) {}
+
+// UnBlockUsers метод для разблокировки пользователя.
+func (r *UserRepository) UnBlockUsers(ctx context.Context, userID uint) {}

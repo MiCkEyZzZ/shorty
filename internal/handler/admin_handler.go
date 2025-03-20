@@ -12,10 +12,12 @@ import (
 	"shorty/internal/service"
 	"shorty/pkg/logger"
 	"shorty/pkg/middleware"
+	"shorty/pkg/parse"
 	"shorty/pkg/req"
 	"shorty/pkg/res"
 )
 
+// AdminHandlerDeps - зависимости для создания экземпляра AdminHandler
 type AdminHandlerDeps struct {
 	Config      *config.Config
 	UserService *service.UserService
@@ -23,6 +25,7 @@ type AdminHandlerDeps struct {
 	StatService *service.StatService
 }
 
+// AdminHandler - обработчик для управления администратором.
 type AdminHandler struct {
 	Config      *config.Config
 	UserService *service.UserService
@@ -30,6 +33,7 @@ type AdminHandler struct {
 	StatService *service.StatService
 }
 
+// NewAdminHandler регистрирует маршруты, связанные с администратором, и привязывает их к методам AdminHandler.
 func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	handler := &AdminHandler{
 		Config:      deps.Config,
@@ -55,12 +59,14 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.HandleFunc("DELETE /admin/links/{id}", middleware.AdminOnly(handler.DeleteLink()))
 }
 
+// GetStats метод для получения статистики.
 func (a *AdminHandler) GetStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Логика для получения статистики
 	}
 }
 
+// GetUsers метод для получения списка пользователей.
 func (a *AdminHandler) GetUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -76,6 +82,7 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 	}
 }
 
+// GetUser метод для получения пользователя по идентификатору.
 func (a *AdminHandler) GetUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -97,6 +104,7 @@ func (a *AdminHandler) GetUser() http.HandlerFunc {
 	}
 }
 
+// UpdateUser метод для обновления пользователя по идентификатору.
 func (a *AdminHandler) UpdateUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -125,6 +133,7 @@ func (a *AdminHandler) UpdateUser() http.HandlerFunc {
 	}
 }
 
+// DeleteUser метод для удаления пользователя по идентификатору.
 func (a *AdminHandler) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -146,12 +155,14 @@ func (a *AdminHandler) DeleteUser() http.HandlerFunc {
 	}
 }
 
+// BlockUser метод для блокировки пользователя по идентификатору.
 func (a *AdminHandler) BlockUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Логика для получения статистики
 	}
 }
 
+// UnblockUser метод для разблокировки пользователя по идентификатору.
 func (a *AdminHandler) UnblockUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Логика для получения статистики
@@ -161,7 +172,7 @@ func (a *AdminHandler) UnblockUser() http.HandlerFunc {
 func (a *AdminHandler) BlockLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		id, err := parseID(r)
+		id, err := parse.ParseID(r)
 		if err != nil {
 			logger.Error("Ошибка парсинга ID ссылки", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
@@ -192,7 +203,7 @@ func (a *AdminHandler) BlockLink() http.HandlerFunc {
 func (a *AdminHandler) UnblockLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		id, err := parseID(r)
+		id, err := parse.ParseID(r)
 		if err != nil {
 			logger.Error("Ошибка парсинга ID ссылки", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
@@ -224,14 +235,4 @@ func (a *AdminHandler) DeleteLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Логика для получения статистики
 	}
-}
-
-// parseID парсит идентификатор из строки в uint.
-func parseIDs(r *http.Request) (uint, error) {
-	rid := r.PathValue("id")
-	id, err := strconv.ParseUint(rid, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	return uint(id), nil
 }
