@@ -29,10 +29,29 @@ func NewServer(
 	router := http.NewServeMux()
 
 	// Обработчики.
-	handler.NewLinkHandler(router, handler.LinkHandlerDeps{Config: cfg, Service: linkService, EventBus: eventBus})
-	handler.NewUserHandler(router, handler.UserHandlerDeps{Config: cfg, Service: userService})
-	handler.NewAuthHandler(router, handler.AuthHandlerDeps{Config: cfg, Service: authService})
-	handler.NewStatHandler(router, handler.StatHandlerDeps{Config: cfg, Service: statService})
+	handler.NewLinkHandler(router, handler.LinkHandlerDeps{
+		Config:   cfg,
+		Service:  linkService,
+		EventBus: eventBus,
+	})
+	handler.NewUserHandler(router, handler.UserHandlerDeps{
+		Config:  cfg,
+		Service: userService,
+	})
+	handler.NewAuthHandler(router, handler.AuthHandlerDeps{
+		Config:  cfg,
+		Service: authService,
+	})
+	handler.NewStatHandler(router, handler.StatHandlerDeps{
+		Config:  cfg,
+		Service: statService,
+	})
+	handler.NewAdminHandler(router, handler.AdminHandlerDeps{
+		Config:      cfg,
+		UserService: userService,
+		LinkService: linkService,
+		StatService: statService,
+	})
 
 	server := &http.Server{
 		Addr:    ":8080",

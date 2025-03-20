@@ -114,3 +114,43 @@ func (s *LinkService) FindByID(ctx context.Context, linkID uint) (*models.Link, 
 	logger.Info("Ссылка найдена по ID", zap.Uint("id", linkID), zap.String("hash", link.Hash))
 	return link, nil
 }
+
+// Block блокирует ссылку
+func (s *LinkService) Block(ctx context.Context, linkID uint) (*models.Link, error) {
+	link, err := s.Repo.FindLinkByID(ctx, linkID)
+	if err != nil {
+		return nil, err
+	}
+	if link == nil {
+		return nil, ErrLinkNotFound
+	}
+
+	link.IsBlocked = true
+	updatedLink, err := s.Repo.BlockLink(ctx, link)
+	if err != nil {
+		logger.Error("Ошибка при блокировки ссылки", zap.Uint("id", linkID), zap.Error(err))
+		return nil, ErrLinkUpdate
+	}
+
+	return updatedLink, nil
+}
+
+// UnBlock разюлокирует ссылку
+func (s *LinkService) UnBlock(ctx context.Context, linkID uint) (*models.Link, error) {
+	link, err := s.Repo.FindLinkByID(ctx, linkID)
+	if err != nil {
+		return nil, err
+	}
+	if link == nil {
+		return nil, ErrLinkNotFound
+	}
+
+	link.IsBlocked = false
+	updatedLink, err := s.Repo.UnBlockLink(ctx, link)
+	if err != nil {
+		logger.Error("Ошибка при снятии блокировки с ссылки", zap.Uint("id", linkID), zap.Error(err))
+		return nil, ErrLinkUpdate
+	}
+
+	return updatedLink, nil
+}

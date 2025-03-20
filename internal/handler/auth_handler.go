@@ -54,7 +54,7 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 			return
 		}
 
-		email, err := h.Service.Registration(ctx, body.Name, body.Email, body.Password)
+		email, err := h.Service.Registration(ctx, body.Name, body.Email, body.Password, body.Role, body.IsBlocked)
 		if err != nil {
 			logger.Error("Ошибка регистрации пользователя", zap.String("email", body.Email), zap.Error(err))
 			res.ERROR(w, common.ErrUserRegistrationFailed, http.StatusInternalServerError)
@@ -92,7 +92,7 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 			return
 		}
 
-		email, err := h.Service.Login(ctx, body.Email, body.Password)
+		email, err := h.Service.Login(ctx, body.Email, body.Password, body.Role)
 		if err != nil {
 			logger.Error("Ошибка авторизации пользователя", zap.String("email", body.Email), zap.Error(err))
 			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)

@@ -1,10 +1,14 @@
 package payload
 
+import "shorty/internal/models"
+
 // CreateRequest структура представляет запрос на создание нового пользователя.
 type CreateUserRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Name      string      `json:"name" validate:"required"`
+	Email     string      `json:"email" validate:"required,email"`
+	Password  string      `json:"password" validate:"required"`
+	Role      models.Role `json:"role" validate:"required"`
+	IsBlocked bool        `json:"is_blocked"`
 }
 
 // GetByEmailRequest структура представляет запрос на получения пользователя по адресу электронной почты.

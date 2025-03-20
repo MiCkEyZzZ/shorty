@@ -128,4 +128,37 @@ func (r *LinkRepository) FindLinkByID(ctx context.Context, linkID uint) (*models
 }
 
 // BlockLink блокирует ссылку по идентификатору.
-func (r *LinkRepository) BlockLink(ctx context.Context, linkID uint) {}
+func (r *LinkRepository) BlockLink(ctx context.Context, link *models.Link) (*models.Link, error) {
+	res := r.Database.DB.WithContext(ctx).
+		Model(&models.Link{}).
+		Where("id = ?", link.ID).
+		Updates(map[string]interface{}{
+			"is_blocked": link.IsBlocked,
+		})
+
+	if res.Error != nil {
+		logger.Error("Ошибка блокировки ссылки", zap.Uint("id", link.ID), zap.Error(res.Error))
+		return nil, fmt.Errorf("ошибка при блокировке ссылки: %w", res.Error)
+	}
+
+	logger.Info("Ссылка заблокирована", zap.Uint("id", link.ID), zap.Bool("is_blocked", link.IsBlocked))
+	return link, nil
+}
+
+// UnBlockLink заблокирует ссылку по идентификатору.
+func (r *LinkRepository) UnBlockLink(ctx context.Context, link *models.Link) (*models.Link, error) {
+	res := r.Database.DB.WithContext(ctx).
+		Model(&models.Link{}).
+		Where("id = ?", link.ID).
+		Updates(map[string]interface{}{
+			"is_blocked": link.IsBlocked,
+		})
+
+	if res.Error != nil {
+		logger.Error("Ошибка снятие блокировки с ссылки", zap.Uint("id", link.ID), zap.Error(res.Error))
+		return nil, fmt.Errorf("ошибка при снятии блокировки c ссылки: %w", res.Error)
+	}
+
+	logger.Info("Ссылка разблокирована", zap.Uint("id", link.ID), zap.Bool("is_blocked", link.IsBlocked))
+	return link, nil
+}

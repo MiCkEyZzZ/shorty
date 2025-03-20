@@ -9,8 +9,14 @@ type CreateLinkRequest struct {
 
 // UpdateLinkRequest - структура для обновления сокращенной ссылки.
 type UpdateLinkRequest struct {
-	URL  string `json:"url" validate:"required,url"`
-	Hash string `json:"hash"`
+	URL       string `json:"url" validate:"required,url"`
+	Hash      string `json:"hash"`
+	IsBlocked bool   `json:"is_blocked"`
+}
+
+// UpdateLinkRequest - структура для обновления сокращенной ссылки.
+type BlockLinkRequest struct {
+	IsBlocked bool `json:"is_blocked"`
 }
 
 type GetAllLinksResponse struct {

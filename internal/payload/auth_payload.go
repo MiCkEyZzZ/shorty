@@ -1,9 +1,12 @@
 package payload
 
+import "shorty/internal/models"
+
 // SigninRequest - представляет запрос на вход пользователя.
 type SigninRequest struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Email    string      `json:"email" validate:"required,email"`
+	Password string      `json:"password" validate:"required"`
+	Role     models.Role `json:"role" validate:"required"`
 }
 
 // SignupRequest - представляет запрос на регистрацию нового пользователя.

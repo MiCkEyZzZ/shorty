@@ -30,7 +30,7 @@ func NewAuthService(repo *repository.UserRepository) *AuthService {
 }
 
 // Registration регистрация нового пользователя.
-func (s *AuthService) Registration(ctx context.Context, name, email, password string) (string, error) {
+func (s *AuthService) Registration(ctx context.Context, name, email, password string, role models.Role, isBlocked bool) (string, error) {
 	exists, err := s.Repo.GetUserByEmail(ctx, email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Error("Ошибка при поиске пользователя", zap.Error(err))
@@ -48,9 +48,11 @@ func (s *AuthService) Registration(ctx context.Context, name, email, password st
 	}
 
 	user := &models.User{
-		Name:     name,
-		Email:    email,
-		Password: string(hashedPassword),
+		Name:      name,
+		Email:     email,
+		Password:  string(hashedPassword),
+		Role:      role,
+		IsBlocked: isBlocked,
 	}
 	_, err = s.Repo.CreateUser(ctx, user)
 	if err != nil {
@@ -62,7 +64,7 @@ func (s *AuthService) Registration(ctx context.Context, name, email, password st
 }
 
 // Login авторизация существующего пользователя.
-func (s *AuthService) Login(ctx context.Context, email, password string) (string, error) {
+func (s *AuthService) Login(ctx context.Context, email, password string, role models.Role) (string, error) {
 	exists, err := s.Repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
