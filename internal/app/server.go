@@ -30,17 +30,13 @@ func NewServer(
 
 	// Обработчики.
 	handler.NewLinkHandler(router, handler.LinkHandlerDeps{
-		Config:   cfg,
-		Service:  linkService,
-		EventBus: eventBus,
-	})
-	handler.NewUserHandler(router, handler.UserHandlerDeps{
-		Config:  cfg,
-		Service: userService,
+		Config:      cfg,
+		LinkService: linkService,
+		EventBus:    eventBus,
 	})
 	handler.NewAuthHandler(router, handler.AuthHandlerDeps{
-		Config:  cfg,
-		Service: authService,
+		Config:      cfg,
+		AuthService: authService,
 	})
 	handler.NewStatHandler(router, handler.StatHandlerDeps{
 		Config:  cfg,
@@ -51,6 +47,10 @@ func NewServer(
 		UserService: userService,
 		LinkService: linkService,
 		StatService: statService,
+	})
+	handler.NewUserHandler(router, handler.UserHandlerDeps{
+		Config:      cfg,
+		UserService: userService,
 	})
 
 	server := &http.Server{

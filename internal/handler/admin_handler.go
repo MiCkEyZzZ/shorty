@@ -4,14 +4,16 @@ import (
 	"net/http"
 	"strconv"
 
+	"go.uber.org/zap"
+
 	"shorty/internal/common"
 	"shorty/internal/config"
+	"shorty/internal/models"
 	"shorty/internal/service"
 	"shorty/pkg/logger"
 	"shorty/pkg/middleware"
+	"shorty/pkg/req"
 	"shorty/pkg/res"
-
-	"go.uber.org/zap"
 )
 
 type AdminHandlerDeps struct {
@@ -42,8 +44,8 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	// Управление пользователями.
 	router.HandleFunc("/admin/users", handler.GetUsers())
 	router.HandleFunc("GET /admin/users/{id}", handler.GetUser())
-	router.HandleFunc("PATCH /admin/users/{id}", middleware.AdminOnly(handler.UpdateUser()))
-	router.HandleFunc("DELETE /admin/users/{id}", middleware.AdminOnly(handler.DeleteUser()))
+	router.HandleFunc("PATCH /admin/users/{id}", handler.UpdateUser())
+	router.HandleFunc("DELETE /admin/users/{id}", handler.DeleteUser())
 	router.HandleFunc("PATCH /admin/users/{id}/block", middleware.AdminOnly(handler.BlockUser()))
 	router.HandleFunc("PATCH /admin/users/{id}/unblock", middleware.AdminOnly(handler.UnblockUser()))
 
@@ -65,7 +67,7 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 		users, err := a.UserService.GetAll(ctx)
 		if err != nil {
 			logger.Error("Ошибка получения списка пользователей", zap.Error(err))
-			res.ERROR(w, ErrorGetUsers, http.StatusInternalServerError)
+			res.ERROR(w, common.ErrorGetUsers, http.StatusInternalServerError)
 			return
 		}
 		logger.Info("Список пользователей успешно получен", zap.Int("count", len(users)))
@@ -81,13 +83,13 @@ func (a *AdminHandler) GetUser() http.HandlerFunc {
 		userID, err := strconv.Atoi(id)
 		if err != nil {
 			logger.Error("Некорректный идентификатор пользователя", zap.String("id", id), zap.Error(err))
-			res.ERROR(w, ErrWrongID, http.StatusBadRequest)
+			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 		user, err := a.UserService.GetByID(ctx, uint(userID))
 		if err != nil {
 			logger.Error("Ошибка поиска пользователя", zap.Int("userID", userID), zap.Error(err))
-			res.ERROR(w, ErrUserNotFound, http.StatusNotFound)
+			res.ERROR(w, common.ErrUserNotFound, http.StatusNotFound)
 			return
 		}
 		logger.Info("Пользователь найден", zap.Int("id", userID))
@@ -97,13 +99,50 @@ func (a *AdminHandler) GetUser() http.HandlerFunc {
 
 func (a *AdminHandler) UpdateUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Логика для получения статистики
+		ctx := r.Context()
+		id := r.PathValue("id")
+		userID, err := strconv.Atoi(id)
+		if err != nil {
+			logger.Error("Некорректный ID пользователя", zap.String("id", id), zap.Error(err))
+			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
+			return
+		}
+		body, err := req.HandleBody[models.User](&w, r)
+		if err != nil {
+			logger.Error("Ошибка обработки тела запроса", zap.Error(err))
+			res.ERROR(w, common.ErrRequestBodyParse, http.StatusBadRequest)
+			return
+		}
+		body.ID = uint(userID)
+		updatedUser, err := a.UserService.Update(ctx, body)
+		if err != nil {
+			logger.Error("Ошибка обновления пользователя", zap.Int("userID", userID), zap.Error(err))
+			res.ERROR(w, common.ErrUserUpdateFailed, http.StatusInternalServerError)
+			return
+		}
+		logger.Info("Пользователь успешно обновлён", zap.Int("userID", userID))
+		res.JSON(w, updatedUser, http.StatusOK)
 	}
 }
 
 func (a *AdminHandler) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Логика для получения статистики
+		ctx := r.Context()
+		id := r.PathValue("id")
+		userID, err := strconv.Atoi(id)
+		if err != nil {
+			logger.Error("Некорректный ID пользователя", zap.String("id", id), zap.Error(err))
+			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
+			return
+		}
+		err = a.UserService.Delete(ctx, uint(userID))
+		if err != nil {
+			logger.Error("Ошибка удаления пользователя", zap.Int("userID", userID), zap.Error(err))
+			res.ERROR(w, common.ErrUserDeleteFailed, http.StatusInternalServerError)
+			return
+		}
+		logger.Info("Пользователь успешно удалён", zap.Int("userID", userID))
+		res.JSON(w, map[string]string{"message": "Пользователь удалён"}, http.StatusOK)
 	}
 }
 
@@ -141,7 +180,7 @@ func (a *AdminHandler) BlockLink() http.HandlerFunc {
 		updatedLink, err := a.LinkService.Block(ctx, link.ID)
 		if err != nil {
 			logger.Error("Ошибка блокировки ссылки", zap.Uint("id", uint(id)), zap.Error(err))
-			res.ERROR(w, common.ErrUpdateFailed, http.StatusInternalServerError)
+			res.ERROR(w, common.ErrLinkBlockFailed, http.StatusInternalServerError)
 			return
 		}
 
@@ -172,7 +211,7 @@ func (a *AdminHandler) UnblockLink() http.HandlerFunc {
 		updatedLink, err := a.LinkService.UnBlock(ctx, link.ID)
 		if err != nil {
 			logger.Error("Ошибка при разблокировки ссылки", zap.Uint("id", uint(id)), zap.Error(err))
-			res.ERROR(w, common.ErrUpdateFailed, http.StatusInternalServerError)
+			res.ERROR(w, common.ErrUnBlockFailed, http.StatusInternalServerError)
 			return
 		}
 

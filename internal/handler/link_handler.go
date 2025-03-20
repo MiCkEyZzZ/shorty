@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -21,39 +20,26 @@ import (
 	"shorty/pkg/res"
 )
 
-var (
-	ErrCreateShortURLLink = errors.New("не удалось создать сокращённый URL")
-	ErrInvalidLimit       = errors.New("неверный лимит")
-	ErrInvalidOffset      = errors.New("неверное офсет")
-	ErrHashNotProvided    = errors.New("hash не указан")
-	ErrURLNotFound        = errors.New("URL-адрес не найден")
-	ErrClickWriteFailed   = errors.New("Ошибка записи клика")
-	ErrInvalidID          = errors.New("некорректный ID")
-	ErrUpdateLinkFailed   = errors.New("не удалось обновить ссылку")
-	ErrLinkNotFound       = errors.New("ссылка с таким ID не найдена")
-	ErrLinkDeleteFailed   = errors.New("ошибка удаления ссылки")
-)
-
 // LinkHandlerDeps - зависимости для создания экземпляра LinkHandler
 type LinkHandlerDeps struct {
-	Config   *config.Config
-	Service  *service.LinkService
-	EventBus *event.EventBus
+	Config      *config.Config
+	LinkService *service.LinkService
+	EventBus    *event.EventBus
 }
 
 // LinkHandler - обработчик коротких ссылок.
 type LinkHandler struct {
-	Config   *config.Config
-	Service  *service.LinkService
-	EventBus *event.EventBus
+	Config      *config.Config
+	LinkService *service.LinkService
+	EventBus    *event.EventBus
 }
 
 // NewLinkHandler создает новый экземпляр LinkHandler
 func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	handler := &LinkHandler{
-		Config:   deps.Config,
-		Service:  deps.Service,
-		EventBus: deps.EventBus,
+		Config:      deps.Config,
+		LinkService: deps.LinkService,
+		EventBus:    deps.EventBus,
 	}
 
 	router.HandleFunc("POST /links", handler.Create())
@@ -75,10 +61,10 @@ func (h *LinkHandler) Create() http.HandlerFunc {
 		}
 
 		link := models.NewLink(body.URL)
-		newLink, err := h.Service.Create(ctx, link)
+		newLink, err := h.LinkService.Create(ctx, link)
 		if err != nil {
 			logger.Error("Ошибка создания сокращённого URL", zap.Error(err))
-			res.ERROR(w, ErrCreateShortURLLink, http.StatusBadRequest)
+			res.ERROR(w, common.ErrLinkCreateUR, http.StatusBadRequest)
 			return
 		}
 
@@ -95,17 +81,17 @@ func (h *LinkHandler) GetAll() http.HandlerFunc {
 		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 		if err != nil {
 			logger.Error("Неверный параметр 'limit'", zap.String("limit", r.URL.Query().Get("limit")), zap.Error(err))
-			res.ERROR(w, ErrInvalidLimit, http.StatusBadRequest)
+			res.ERROR(w, common.ErrInvalidLimit, http.StatusBadRequest)
 			return
 		}
 		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
 		if err != nil {
 			logger.Error("Неверный параметр 'offset'", zap.String("offset", r.URL.Query().Get("offset")), zap.Error(err))
-			res.ERROR(w, ErrInvalidOffset, http.StatusBadRequest)
+			res.ERROR(w, common.ErrInvalidOffset, http.StatusBadRequest)
 			return
 		}
-		count, _ := h.Service.Count(ctx)
-		links, _ := h.Service.GetAll(ctx, limit, offset)
+		count, _ := h.LinkService.Count(ctx)
+		links, _ := h.LinkService.GetAll(ctx, limit, offset)
 
 		logger.Info("Получение всех сокращённых ссылок", zap.Int("limit", limit), zap.Int("offset", offset), zap.Int64("count", count))
 		res.JSON(w, payload.GetAllLinksResponse{Count: count, Links: links}, http.StatusOK)
@@ -119,36 +105,36 @@ func (h *LinkHandler) GoTo() http.HandlerFunc {
 		hash := r.PathValue("hash")
 		if hash == "" {
 			logger.Error("Не указан hash для редиректа")
-			res.ERROR(w, ErrHashNotProvided, http.StatusBadRequest)
+			res.ERROR(w, common.ErrLinkHashNotProvided, http.StatusBadRequest)
 			return
 		}
 
 		// Получаем ссылку по хешу
-		link, err := h.Service.GetByHash(ctx, hash)
+		link, err := h.LinkService.GetByHash(ctx, hash)
 		if err != nil {
 			logger.Error("Ошибка получения ссылки по хешу", zap.String("hash", hash), zap.Error(err))
-			res.ERROR(w, ErrURLNotFound, http.StatusInternalServerError)
+			res.ERROR(w, common.ErrURLNotFound, http.StatusInternalServerError)
 			return
 		}
 
 		// Логируем переход в статистику
 		go func(linkID uint) {
-			timer := time.NewTimer(time.Second) // Таймаут 1 секунда
+			timer := time.NewTimer(time.Second)
 			defer timer.Stop()
 
-			done := make(chan struct{}) // Канал завершения
+			done := make(chan struct{})
 
 			go func() {
 				if err := h.EventBus.Publish(event.Event{Type: event.EventLinkVisited, Data: linkID}); err != nil {
 					logger.Error("Ошибка записи события о переходе по ссылке", zap.Uint("linkID", linkID), zap.Error(err))
-					res.ERROR(w, ErrClickWriteFailed, http.StatusInternalServerError)
+					res.ERROR(w, common.ErrClickWriteFailed, http.StatusInternalServerError)
 				}
-				close(done) // Закрываем канал по завершению
+				close(done)
 			}()
 
 			select {
-			case <-done: // Успешная запись
-			case <-timer.C: // Таймаут
+			case <-done:
+			case <-timer.C:
 				logger.Info("Таймаут при записи клика", zap.Uint("linkID", linkID))
 			}
 		}(link.ID)
@@ -165,7 +151,7 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 		id, err := parseID(r)
 		if err != nil {
 			logger.Error("Неверный ID для обновления ссылки", zap.Error(err))
-			res.ERROR(w, ErrInvalidID, http.StatusBadRequest)
+			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 
@@ -176,14 +162,14 @@ func (h *LinkHandler) Update() http.HandlerFunc {
 			return
 		}
 
-		link, err := h.Service.Update(ctx, &models.Link{
+		link, err := h.LinkService.Update(ctx, &models.Link{
 			Model: gorm.Model{ID: uint(id)},
 			Url:   body.URL,
 			Hash:  body.Hash,
 		})
 		if err != nil {
 			logger.Error("Ошибка обновления ссылки", zap.Uint("id", uint(id)), zap.Error(err))
-			res.ERROR(w, ErrUpdateLinkFailed, http.StatusInternalServerError)
+			res.ERROR(w, common.ErrLinkUpdateLinkFailed, http.StatusInternalServerError)
 			return
 		}
 
@@ -199,21 +185,21 @@ func (h *LinkHandler) Delete() http.HandlerFunc {
 		id, err := parseID(r)
 		if err != nil {
 			logger.Error("Неверный ID для удаления ссылки", zap.Error(err))
-			res.ERROR(w, ErrInvalidID, http.StatusBadRequest)
+			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 
-		_, err = h.Service.FindByID(ctx, uint(id))
+		_, err = h.LinkService.FindByID(ctx, uint(id))
 		if err != nil {
 			logger.Error("Ссылка не найдена для удаления", zap.Uint("id", uint(id)), zap.Error(err))
-			res.ERROR(w, ErrLinkNotFound, http.StatusNotFound)
+			res.ERROR(w, common.ErrLinkNotFound, http.StatusNotFound)
 			return
 		}
 
-		err = h.Service.Delete(ctx, uint(id))
+		err = h.LinkService.Delete(ctx, uint(id))
 		if err != nil {
 			logger.Error("Ошибка удаления ссылки", zap.Uint("id", uint(id)), zap.Error(err))
-			res.ERROR(w, ErrLinkDeleteFailed, http.StatusInternalServerError)
+			res.ERROR(w, common.ErrLinkDeleteFailed, http.StatusInternalServerError)
 			return
 		}
 

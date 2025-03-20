@@ -17,21 +17,21 @@ import (
 
 // AuthHandlerDeps - зависимости для обработчика аутентификации.
 type AuthHandlerDeps struct {
-	Config  *config.Config
-	Service *service.AuthService
+	Config      *config.Config
+	AuthService *service.AuthService
 }
 
 // AuthHandler - обработчик аутентификации.
 type AuthHandler struct {
-	Config  *config.Config
-	Service *service.AuthService
+	Config      *config.Config
+	AuthService *service.AuthService
 }
 
 // NewAuthHandler - создание обработчика аутентификации.
 func NewAuthHandler(router *http.ServeMux, deps AuthHandlerDeps) {
 	handler := &AuthHandler{
-		Config:  deps.Config,
-		Service: deps.Service,
+		Config:      deps.Config,
+		AuthService: deps.AuthService,
 	}
 	router.HandleFunc("POST /auth/signup", handler.SignUp())
 	router.HandleFunc("POST /auth/signin", handler.SignIn())
@@ -54,7 +54,7 @@ func (h *AuthHandler) SignUp() http.HandlerFunc {
 			return
 		}
 
-		email, err := h.Service.Registration(ctx, body.Name, body.Email, body.Password, body.Role, body.IsBlocked)
+		email, err := h.AuthService.Registration(ctx, body.Name, body.Email, body.Password, body.Role, body.IsBlocked)
 		if err != nil {
 			logger.Error("Ошибка регистрации пользователя", zap.String("email", body.Email), zap.Error(err))
 			res.ERROR(w, common.ErrUserRegistrationFailed, http.StatusInternalServerError)
@@ -92,7 +92,7 @@ func (h *AuthHandler) SignIn() http.HandlerFunc {
 			return
 		}
 
-		email, err := h.Service.Login(ctx, body.Email, body.Password, body.Role)
+		email, err := h.AuthService.Login(ctx, body.Email, body.Password, body.Role)
 		if err != nil {
 			logger.Error("Ошибка авторизации пользователя", zap.String("email", body.Email), zap.Error(err))
 			res.ERROR(w, common.ErrAuthFailed, http.StatusInternalServerError)
