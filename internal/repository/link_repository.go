@@ -191,3 +191,14 @@ func (r *LinkRepository) GetDeletedLinksCount(ctx context.Context) (int64, error
 	}
 	return count, nil
 }
+
+// GetTotalLinks метод для получения общего количества созданных ссылок.
+func (r *LinkRepository) GetTotalLinks(ctx context.Context) (int64, error) {
+	var count int64
+	result := r.Database.DB.WithContext(ctx).Model(&models.Link{}).Unscoped().Count(&count)
+	if result.Error != nil {
+		logger.Error("Ошибка при получении количества созданных ссылок", zap.Error(result.Error))
+		return 0, result.Error
+	}
+	return count, nil
+}

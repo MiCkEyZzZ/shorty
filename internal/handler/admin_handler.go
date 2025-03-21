@@ -64,6 +64,7 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.Handle("DELETE /admin/links/{id}", adminMiddleware(handler.DeleteLink()))
 	router.Handle("GET /admin/links/blocked/count", adminMiddleware(handler.GetBlockedLinksCount()))
 	router.Handle("GET /admin/links/deleted/count", adminMiddleware(handler.GetDeletedLinksCount()))
+	router.Handle("GET /admin/links/created/count", adminMiddleware(handler.GetTotalLinks()))
 
 	// Управление статистикой
 	router.HandleFunc("GET /admin/stats", handler.GetStats())
@@ -380,5 +381,19 @@ func (a *AdminHandler) GetDeletedLinksCount() http.HandlerFunc {
 			return
 		}
 		res.JSON(w, map[string]int64{"deleted_links:": count}, http.StatusOK)
+	}
+}
+
+// GetTotalLinks метод для получения общего количества ссылок.
+func (a *AdminHandler) GetTotalLinks() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		count, err := a.LinkService.GetTotalLinks(ctx)
+		if err != nil {
+			logger.Error("Ошибка при получении количества созданных ссылок", zap.Error(err))
+			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
+			return
+		}
+		res.JSON(w, map[string]int64{"created_links:": count}, http.StatusOK)
 	}
 }

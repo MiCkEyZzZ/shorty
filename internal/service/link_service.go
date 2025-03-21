@@ -177,3 +177,14 @@ func (s *LinkService) GetDeletedLinksCount(ctx context.Context) (int64, error) {
 	logger.Info("Количество удалённых ссылок получено", zap.Int64("count", count))
 	return count, nil
 }
+
+// GetTotalLinks метод для получения общего количества ссылок.
+func (s *LinkService) GetTotalLinks(ctx context.Context) (int64, error) {
+	count, err := s.Repo.GetTotalLinks(ctx)
+	if err != nil {
+		logger.Error("Ошибка при получении количества созданных ссылок", zap.Error(err))
+		return 0, err
+	}
+	logger.Info("Количество созданных ссылок получено", zap.Int64("count", count))
+	return count, nil
+}
