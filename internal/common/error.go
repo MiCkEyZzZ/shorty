@@ -28,6 +28,7 @@ var (
 	ErrUserNotFound     = errors.New("пользователь не найден")
 	ErrUserUpdateFailed = errors.New("не удалось обновить пользователя")
 	ErrUserDeleteFailed = errors.New("не удалось удалить пользователя")
+	ErrInternal         = errors.New("ошибка при получении количества заблокированных пользователей")
 
 	// Ошибки ссылок.
 	ErrLinkCreateUR         = errors.New("не удалось создать сокращённый URL")

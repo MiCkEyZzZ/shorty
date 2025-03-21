@@ -26,10 +26,10 @@ func NewLinkRepository(db *db.DB) *LinkRepository {
 
 // CreateLink метод для создания новой ссылки.
 func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
-	res := r.Database.DB.WithContext(ctx).Create(link)
-	if res.Error != nil {
-		logger.Error("Ошибка создания ссылки", zap.Error(res.Error))
-		return nil, fmt.Errorf("ошибка при сохранении ссылки в БД: %w", res.Error)
+	result := r.Database.DB.WithContext(ctx).Create(link)
+	if result.Error != nil {
+		logger.Error("Ошибка создания ссылки", zap.Error(result.Error))
+		return nil, fmt.Errorf("ошибка при сохранении ссылки в БД: %w", result.Error)
 	}
 	logger.Info("Ссылка успешно создана", zap.Uint("linkID", link.ID))
 	return link, nil
@@ -38,17 +38,17 @@ func (r *LinkRepository) CreateLink(ctx context.Context, link *models.Link) (*mo
 // GetLinks метод для получения списка ссылок с пагинацией.
 func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) ([]models.Link, error) {
 	var links []models.Link
-	res := r.Database.DB.
+	result := r.Database.DB.
 		Model(&models.Link{}).
 		WithContext(ctx).
-		Where("deleted_at IS NULL").
+		Where("deleted_at IS NULL AND is_blocked = false").
 		Order("id ASC").
 		Limit(limit).
 		Offset(offset).
 		Find(&links)
-	if res.Error != nil {
-		logger.Error("Ошибка получения списка ссылок", zap.Error(res.Error))
-		return nil, fmt.Errorf("ошибка при получении списка ссылок: %w", res.Error)
+	if result.Error != nil {
+		logger.Error("Ошибка получения списка ссылок", zap.Error(result.Error))
+		return nil, fmt.Errorf("ошибка при получении списка ссылок: %w", result.Error)
 	}
 	logger.Info("Получено ссылок", zap.Int("count", len(links)))
 	return links, nil
@@ -57,13 +57,15 @@ func (r *LinkRepository) GetLinks(ctx context.Context, limit, offset int) ([]mod
 // GetLinkHash метод для поиска ссылки по хэшу.
 func (r *LinkRepository) GetLinkHash(ctx context.Context, hash string) (*models.Link, error) {
 	var link models.Link
-	res := r.Database.DB.WithContext(ctx).First(&link, "hash = ?", hash)
-	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return nil, nil
+	result := r.Database.DB.WithContext(ctx).
+		Where("hash = ? AND is_blocked = false", hash).
+		First(&link)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
 		}
-		logger.Error("Ошибка поиска ссылки", zap.String("hash", hash), zap.Error(res.Error))
-		return nil, res.Error
+		logger.Error("Ошибка поиска ссылки", zap.String("hash", hash), zap.Error(result.Error))
+		return nil, result.Error
 	}
 	logger.Info("Ссылка найдена по хэшу", zap.String("hash", hash), zap.Uint("linkID", link.ID))
 	return &link, nil
@@ -71,10 +73,10 @@ func (r *LinkRepository) GetLinkHash(ctx context.Context, hash string) (*models.
 
 // UpdateLink метод для обновления ссылки.
 func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*models.Link, error) {
-	res := r.Database.DB.WithContext(ctx).Clauses(clause.Returning{}).Updates(link)
-	if res.Error != nil {
-		logger.Error("Ошибка обновления ссылки", zap.Uint("linkID", link.ID), zap.Error(res.Error))
-		return nil, fmt.Errorf("ошибка при обновлении ссылки в БД: %w", res.Error)
+	result := r.Database.DB.WithContext(ctx).Clauses(clause.Returning{}).Updates(link)
+	if result.Error != nil {
+		logger.Error("Ошибка обновления ссылки", zap.Uint("linkID", link.ID), zap.Error(result.Error))
+		return nil, fmt.Errorf("ошибка при обновлении ссылки в БД: %w", result.Error)
 	}
 	logger.Info("Ссылка успешно обновлена", zap.Uint("linkID", link.ID))
 	return link, nil
@@ -82,12 +84,15 @@ func (r *LinkRepository) UpdateLink(ctx context.Context, link *models.Link) (*mo
 
 // DeleteLink метод для удаления ссылки по идентификатору.
 func (r *LinkRepository) DeleteLink(ctx context.Context, linkID uint) error {
-	res := r.Database.DB.WithContext(ctx).Delete(&models.Link{}, linkID)
-	if res.Error != nil {
-		logger.Error("Ошибка удаления ссылки", zap.Uint("linkID", linkID), zap.Error(res.Error))
-		return fmt.Errorf("ошибка при удалении ссылки из БД: %w", res.Error)
+	result := r.Database.DB.WithContext(ctx).
+		Model(&models.Link{}).
+		Where("id = ?", linkID).
+		Update("deleted_at", gorm.Expr("Now()"))
+	if result.Error != nil {
+		logger.Error("Ошибка удаления ссылки", zap.Uint("linkID", linkID), zap.Error(result.Error))
+		return fmt.Errorf("ошибка при удалении ссылки из БД: %w", result.Error)
 	}
-	if res.RowsAffected == 0 {
+	if result.RowsAffected == 0 {
 		logger.Warn("Ссылка не найдена для удаления", zap.Uint("linkID", linkID))
 		return fmt.Errorf("ссылка с ID %d не найдена", linkID)
 	}
@@ -95,17 +100,17 @@ func (r *LinkRepository) DeleteLink(ctx context.Context, linkID uint) error {
 	return nil
 }
 
-// CountLink метод для возврата количества ссылок.
-func (r *LinkRepository) CountLink(ctx context.Context) (int64, error) {
+// CountLinks метод для возврата количества ссылок.
+func (r *LinkRepository) CountLinks(ctx context.Context) (int64, error) {
 	var count int64
-	res := r.Database.DB.
+	result := r.Database.DB.
 		WithContext(ctx).
 		Model(&models.Link{}).
 		Where("deleted_at IS NULL").
 		Count(&count)
-	if res.Error != nil {
-		logger.Error("Ошибка подсчёта ссылок", zap.Error(res.Error))
-		return 0, fmt.Errorf("ошибка при подсчёте ссылок: %w", res.Error)
+	if result.Error != nil {
+		logger.Error("Ошибка подсчёта ссылок", zap.Error(result.Error))
+		return 0, fmt.Errorf("ошибка при подсчёте ссылок: %w", result.Error)
 	}
 	logger.Info("Количество ссылок", zap.Int64("count", count))
 	return count, nil
@@ -114,14 +119,14 @@ func (r *LinkRepository) CountLink(ctx context.Context) (int64, error) {
 // FindLinkByID метод для поиска ссылок по идентификатору.
 func (r *LinkRepository) FindLinkByID(ctx context.Context, linkID uint) (*models.Link, error) {
 	var link models.Link
-	res := r.Database.DB.WithContext(ctx).First(&link, linkID)
-	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+	result := r.Database.DB.WithContext(ctx).First(&link, linkID)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			logger.Warn("Ссылка не найдена", zap.Uint("linkID", linkID))
 			return nil, nil
 		}
-		logger.Error("Ошибка при поиске ссылки", zap.Uint("linkID", linkID), zap.Error(res.Error))
-		return nil, fmt.Errorf("ошибка при поиске ссылки: %w", res.Error)
+		logger.Error("Ошибка при поиске ссылки", zap.Uint("linkID", linkID), zap.Error(result.Error))
+		return nil, fmt.Errorf("ошибка при поиске ссылки: %w", result.Error)
 	}
 	logger.Info("Ссылка найдена", zap.Uint("linkID", linkID))
 	return &link, nil
@@ -132,16 +137,14 @@ func (r *LinkRepository) BlockLink(ctx context.Context, link *models.Link) (*mod
 	res := r.Database.DB.WithContext(ctx).
 		Model(&models.Link{}).
 		Where("id = ?", link.ID).
-		Updates(map[string]interface{}{
-			"is_blocked": link.IsBlocked,
-		})
+		Updates(map[string]interface{}{"is_blocked": true})
 
 	if res.Error != nil {
 		logger.Error("Ошибка блокировки ссылки", zap.Uint("id", link.ID), zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при блокировке ссылки: %w", res.Error)
 	}
 
-	logger.Info("Ссылка заблокирована", zap.Uint("id", link.ID), zap.Bool("is_blocked", link.IsBlocked))
+	logger.Info("Ссылка заблокирована", zap.Uint("id", link.ID), zap.Bool("is_blocked", true))
 	return link, nil
 }
 
@@ -150,15 +153,13 @@ func (r *LinkRepository) UnBlockLink(ctx context.Context, link *models.Link) (*m
 	res := r.Database.DB.WithContext(ctx).
 		Model(&models.Link{}).
 		Where("id = ?", link.ID).
-		Updates(map[string]interface{}{
-			"is_blocked": link.IsBlocked,
-		})
+		Updates(map[string]interface{}{"is_blocked": false})
 
 	if res.Error != nil {
-		logger.Error("Ошибка снятие блокировки с ссылки", zap.Uint("id", link.ID), zap.Error(res.Error))
-		return nil, fmt.Errorf("ошибка при снятии блокировки c ссылки: %w", res.Error)
+		logger.Error("Ошибка снятия блокировки с ссылки", zap.Uint("id", link.ID), zap.Error(res.Error))
+		return nil, fmt.Errorf("ошибка при снятии блокировки с ссылки: %w", res.Error)
 	}
 
-	logger.Info("Ссылка разблокирована", zap.Uint("id", link.ID), zap.Bool("is_blocked", link.IsBlocked))
+	logger.Info("Ссылка разблокирована", zap.Uint("id", link.ID), zap.Bool("is_blocked", false))
 	return link, nil
 }

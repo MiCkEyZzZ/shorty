@@ -56,6 +56,7 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.Handle("DELETE /admin/users/{id}", adminMiddleware(handler.DeleteUser()))
 	router.Handle("PATCH /admin/users/{id}/block", adminMiddleware(handler.BlockUser()))
 	router.Handle("PATCH /admin/users/{id}/unblock", adminMiddleware(handler.UnblockUser()))
+	router.Handle("GET /admin/users/blocked/count", adminMiddleware(handler.GetBlockedUsersCount()))
 
 	// Управление ссылками.
 	router.Handle("PATCH /admin/links/{id}/block", adminMiddleware(handler.BlockLink()))
@@ -335,5 +336,19 @@ func (a *AdminHandler) DeleteLink() http.HandlerFunc {
 
 		logger.Info("Ссылка успешно удалена", zap.Uint("id", uint(id)))
 		res.JSON(w, map[string]string{"message": "ссылка удалена"}, http.StatusOK)
+	}
+}
+
+// GetBlockedUsersCount метод для получения количества заблокированных пользователей.
+func (a *AdminHandler) GetBlockedUsersCount() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		count, err := a.UserService.GetBlockedUsersCount(ctx)
+		if err != nil {
+			logger.Error("Ошибка при получении количества заблокированных пользователей", zap.Error(err))
+			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
+			return
+		}
+		res.JSON(w, map[string]int64{"blocked_users": count}, http.StatusOK)
 	}
 }

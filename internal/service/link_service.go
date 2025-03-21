@@ -92,7 +92,7 @@ func (s *LinkService) Delete(ctx context.Context, linkID uint) error {
 
 // Count возвращает количество ссылок в базе
 func (s *LinkService) Count(ctx context.Context) (int64, error) {
-	res, err := s.Repo.CountLink(ctx)
+	res, err := s.Repo.CountLinks(ctx)
 	if err != nil {
 		logger.Error("Ошибка при подсчёте ссылок", zap.Error(err))
 		return 0, err

@@ -114,3 +114,14 @@ func (s *UserService) UnBlock(ctx context.Context, userID uint) (*models.User, e
 	}
 	return updatedUser, nil
 }
+
+// GetBlockedUsersCount метод для получения количества заблокированных пользователей.
+func (s *UserService) GetBlockedUsersCount(ctx context.Context) (int64, error) {
+	count, err := s.Repo.GetBlockedUsersCount(ctx)
+	if err != nil {
+		logger.Error("Ошибка при получении количества заблокированных пользователей", zap.Error(err))
+		return 0, err
+	}
+	logger.Info("Количество заблокированных пользователей получено", zap.Int64("count", count))
+	return count, nil
+}

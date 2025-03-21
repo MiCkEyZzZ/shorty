@@ -147,3 +147,18 @@ func (r *UserRepository) UnBlockUsers(ctx context.Context, user *models.User) (*
 	logger.Info("Пользователь разблокирована", zap.Uint("id", user.ID), zap.Bool("is_blocked", user.IsBlocked))
 	return user, nil
 }
+
+// GetBlockedUsersCount метод для получения количества заблокированных пользователей.
+func (r *UserRepository) GetBlockedUsersCount(ctx context.Context) (int64, error) {
+	var count int64
+	result := r.Database.DB.WithContext(ctx).
+		Model(&models.User{}).
+		Where("is_blocked = ?", true).
+		Count(&count)
+	if result.Error != nil {
+		logger.Error("Ошибка при получении количества заблокированных пользователей", zap.Error(result.Error))
+		return 0, fmt.Errorf("ошибка при получении количества заблокированных пользователей: %w", result.Error)
+
+	}
+	return count, nil
+}
