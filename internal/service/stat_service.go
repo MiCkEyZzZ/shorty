@@ -58,3 +58,9 @@ func (s *StatService) GetStats(ctx context.Context, by string, from, to time.Tim
 	logger.Info("Статистика получена", zap.Int("count", len(stats)))
 	return stats
 }
+
+func (s *StatService) GetAllLinksStats(ctx context.Context, from, to time.Time) []payload.LinkStatsResponse {
+	logger.Info("Запрос статистики по всем ссылкам", zap.Time("from", from), zap.Time("to", to))
+	stats := s.Repo.GetAllLinksStats(ctx, from, to)
+	return stats
+}

@@ -68,6 +68,7 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 
 	// Управление статистикой
 	router.HandleFunc("GET /admin/stats", handler.GetStats())
+	router.HandleFunc("GET /admin/stats/links", handler.GetAllLinksStats())
 }
 
 // GetStats метод для получения статистики.
@@ -395,5 +396,26 @@ func (a *AdminHandler) GetTotalLinks() http.HandlerFunc {
 			return
 		}
 		res.JSON(w, map[string]int64{"created_links:": count}, http.StatusOK)
+	}
+}
+
+func (a *AdminHandler) GetAllLinksStats() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		fromStr := r.URL.Query().Get("from")
+		from, err := time.Parse("2006-01-02", fromStr)
+		if err != nil {
+			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
+			return
+		}
+
+		toStr := r.URL.Query().Get("to")
+		to, err := time.Parse("2006-01-02", toStr)
+		if err != nil {
+			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
+			return
+		}
+		stats := a.StatService.GetAllLinksStats(ctx, from, to)
+		res.JSON(w, stats, http.StatusOK)
 	}
 }

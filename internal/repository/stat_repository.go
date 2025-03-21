@@ -93,14 +93,41 @@ func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.
 		logger.Warn("Неверное значение для группировки", zap.String("groupBy", by))
 		return nil
 	}
-	r.Database.DB.
-		Model(&models.Stat{}).
+	result := r.Database.DB.
 		WithContext(ctx).
+		Model(&models.Stat{}).
 		Select(selectQuery).
 		Where("date BETWEEN ? AND ?", from, to).
 		Group("period").
 		Order("period").
 		Scan(&stats)
-	logger.Info("Статистика успешно получена", zap.Int("statsCount", len(stats)))
+	if result.Error != nil {
+		logger.Error("Ошибка при получении статистики", zap.String("groupBy", by), zap.Error(result.Error))
+		return nil
+	}
+	logger.Info("Статистика успешно получена", zap.String("groupBy", by), zap.Int("statsCount", len(stats)))
+	return stats
+}
+
+func (r *StatRepository) GetAllLinksStats(ctx context.Context, from, to time.Time) []payload.LinkStatsResponse {
+	var stats []payload.LinkStatsResponse
+
+	r.Database.DB.
+		Model(&models.Stat{}).
+		WithContext(ctx).
+		Select(`
+			links.id AS link_id,
+			links.url AS url,
+			COUNT(stats.id) AS total_clicks,
+			MAX(stats.date) AS last_click_date,
+			SUM(CASE WHEN links.is_blocked = true THEN 1 ELSE 0 END) AS blocked_count
+		`).
+		Joins("LEFT JOIN links ON stats.link_id = links.id").
+		Where("stats.date BETWEEN ? AND ?", from, to).
+		Group("links.id, links.url").
+		Order("total_clicks DESC").
+		Scan(&stats)
+
+	logger.Info("Статистика по всем ссылкам получена", zap.Int("count", len(stats)))
 	return stats
 }
