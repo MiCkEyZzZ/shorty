@@ -163,3 +163,17 @@ func (r *LinkRepository) UnBlockLink(ctx context.Context, link *models.Link) (*m
 	logger.Info("Ссылка разблокирована", zap.Uint("id", link.ID), zap.Bool("is_blocked", false))
 	return link, nil
 }
+
+// GetBlockedLinksCount метод для получения количества заблокированных ссылок.
+func (r *LinkRepository) GetBlockedLinksCount(ctx context.Context) (int64, error) {
+	var count int64
+	result := r.Database.DB.WithContext(ctx).
+		Model(&models.Link{}).
+		Where("is_blocked = ?", true).
+		Count(&count)
+	if result.Error != nil {
+		logger.Error("Ошибка при получении количества заблокированных ссылок", zap.Error(result.Error))
+		return 0, fmt.Errorf("ошибка при получении количества заблокированных ссылок: %w", result.Error)
+	}
+	return count, nil
+}

@@ -155,3 +155,14 @@ func (s *LinkService) UnBlock(ctx context.Context, linkID uint) (*models.Link, e
 
 	return updatedLink, nil
 }
+
+// GetBlockedLinksCount метод для получения количества заблокированных ссылок.
+func (s *LinkService) GetBlockedLinksCount(ctx context.Context) (int64, error) {
+	count, err := s.Repo.GetBlockedLinksCount(ctx)
+	if err != nil {
+		logger.Error("Ошибка при получении количества заблокированных ссылок", zap.Error(err))
+		return 0, err
+	}
+	logger.Info("Количество заблокированных ссылок получено", zap.Int64("count", count))
+	return count, nil
+}

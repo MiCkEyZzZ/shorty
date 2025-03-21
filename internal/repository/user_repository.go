@@ -158,7 +158,6 @@ func (r *UserRepository) GetBlockedUsersCount(ctx context.Context) (int64, error
 	if result.Error != nil {
 		logger.Error("Ошибка при получении количества заблокированных пользователей", zap.Error(result.Error))
 		return 0, fmt.Errorf("ошибка при получении количества заблокированных пользователей: %w", result.Error)
-
 	}
 	return count, nil
 }
