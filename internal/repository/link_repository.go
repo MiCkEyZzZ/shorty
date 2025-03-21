@@ -177,3 +177,17 @@ func (r *LinkRepository) GetBlockedLinksCount(ctx context.Context) (int64, error
 	}
 	return count, nil
 }
+
+// GetDeletedLinksCount метод для получения количества удалённых ссылок.
+func (r *LinkRepository) GetDeletedLinksCount(ctx context.Context) (int64, error) {
+	var count int64
+	result := r.Database.DB.WithContext(ctx).
+		Model(&models.Link{}).
+		Where("deleted_at IS NOT NULL").
+		Count(&count)
+	if result.Error != nil {
+		logger.Error("Ошибка при получении количества удаленных ссылок", zap.Error(result.Error))
+		return 0, result.Error
+	}
+	return count, nil
+}

@@ -63,6 +63,7 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.Handle("PATCH /admin/links/{id}/unblock", adminMiddleware(handler.UnblockLink()))
 	router.Handle("DELETE /admin/links/{id}", adminMiddleware(handler.DeleteLink()))
 	router.Handle("GET /admin/links/blocked/count", adminMiddleware(handler.GetBlockedLinksCount()))
+	router.Handle("GET /admin/links/deleted/count", adminMiddleware(handler.GetDeletedLinksCount()))
 
 	// Управление статистикой
 	router.HandleFunc("GET /admin/stats", handler.GetStats())
@@ -365,5 +366,19 @@ func (a *AdminHandler) GetBlockedLinksCount() http.HandlerFunc {
 			return
 		}
 		res.JSON(w, map[string]int64{"blocked_links": count}, http.StatusOK)
+	}
+}
+
+// GetDeletedLinksCount метод для получения количества удалённых ссылок.
+func (a *AdminHandler) GetDeletedLinksCount() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		count, err := a.LinkService.GetDeletedLinksCount(ctx)
+		if err != nil {
+			logger.Error("Ошибка при получении количества удалённых ссылок", zap.Error(err))
+			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
+			return
+		}
+		res.JSON(w, map[string]int64{"deleted_links:": count}, http.StatusOK)
 	}
 }

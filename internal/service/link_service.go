@@ -166,3 +166,14 @@ func (s *LinkService) GetBlockedLinksCount(ctx context.Context) (int64, error) {
 	logger.Info("Количество заблокированных ссылок получено", zap.Int64("count", count))
 	return count, nil
 }
+
+// GetDeletedLinksCount метод для получения количества удалённых ссылок.
+func (s *LinkService) GetDeletedLinksCount(ctx context.Context) (int64, error) {
+	count, err := s.Repo.GetBlockedLinksCount(ctx)
+	if err != nil {
+		logger.Error("Ошибка при получении количества удалённых ссылок", zap.Error(err))
+		return 0, err
+	}
+	logger.Info("Количество удалённых ссылок получено", zap.Int64("count", count))
+	return count, nil
+}
