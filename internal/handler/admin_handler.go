@@ -360,11 +360,9 @@ func (a *AdminHandler) GetBlockedLinksCount() http.HandlerFunc {
 		ctx := r.Context()
 		count, err := a.LinkService.GetBlockedLinksCount(ctx)
 		if err != nil {
-			if err != nil {
-				logger.Error("Ошибка при получении количества заблокированных ссылок", zap.Error(err))
-				res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
-				return
-			}
+			logger.Error("Ошибка при получении количества заблокированных ссылок", zap.Error(err))
+			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
+			return
 		}
 		res.JSON(w, map[string]int64{"blocked_links": count}, http.StatusOK)
 	}
