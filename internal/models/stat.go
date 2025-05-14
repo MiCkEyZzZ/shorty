@@ -5,7 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Stat стурктура представляет сущность статистики.
+// Stat represents the entity model for click statistics associated with a shortened link.
 type Stat struct {
 	gorm.Model
 	LinkID    uint           `json:"link_id" gorm:"index"`

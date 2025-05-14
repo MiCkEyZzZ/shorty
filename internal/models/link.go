@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Link стурктура представляет сущность ссылки.
+// Link represents the entity model for a shortened URL.
 type Link struct {
 	gorm.Model
 	Url       string `json:"url"`
@@ -17,7 +17,7 @@ type Link struct {
 	IsBlocked bool   `json:"is_blocked" gorm:"default:false"`
 }
 
-// NewLink создание нового экземпляра ссылки.
+// NewLink creates a new Link instance with a generated short hash.
 func NewLink(url string) *Link {
 	return &Link{
 		Url:  url,
@@ -25,11 +25,12 @@ func NewLink(url string) *Link {
 	}
 }
 
-// generateShortID ф-я для генерации короткого идентификатора.
+// generateHash generates a random base64-encoded string of the specified length.
+// It is used as a short identifier for the link.
 func generateHash(n int) string {
 	bytes := make([]byte, n)
 	if _, err := rand.Read(bytes); err != nil {
-		fmt.Println("Ошибка генерации случайных данных:", err)
+		fmt.Println("Error generating random data:", err)
 		return ""
 	}
 	return base64.RawURLEncoding.EncodeToString(bytes)[:n]
