@@ -78,12 +78,10 @@ func (r *StatRepository) AddClick(ctx context.Context, linkID uint) error {
 	return tx.Commit().Error
 }
 
-// GetStats метод для получения статистики по дням или месяцам за заданный период.
-func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.Time) []payload.GetStatsResponse {
+// GetClickedLinkStats метод для получения статистики по дням или месяцам за заданный период.
+func (r *StatRepository) GetClickedLinkStats(ctx context.Context, by string, from, to time.Time) []payload.GetStatsResponse {
 	var stats []payload.GetStatsResponse
 	var selectQuery string
-
-	// Определяем группировку.
 	switch by {
 	case common.GroupByDay:
 		selectQuery = "to_char(date, 'YYYY-MM-DD') as period, sum(clicks)"
@@ -111,7 +109,6 @@ func (r *StatRepository) GetStats(ctx context.Context, by string, from, to time.
 
 func (r *StatRepository) GetAllLinksStats(ctx context.Context, from, to time.Time) []payload.LinkStatsResponse {
 	var stats []payload.LinkStatsResponse
-
 	r.Database.DB.
 		Model(&models.Stat{}).
 		WithContext(ctx).
@@ -127,7 +124,6 @@ func (r *StatRepository) GetAllLinksStats(ctx context.Context, from, to time.Tim
 		Group("links.id, links.url").
 		Order("total_clicks DESC").
 		Scan(&stats)
-
 	logger.Info("Статистика по всем ссылкам получена", zap.Int("count", len(stats)))
 	return stats
 }

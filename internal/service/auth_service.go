@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	ErrAuthCreation        = errors.New("не удалось создать пользователя.")
-	ErrAuthNotFound        = errors.New("не удалось найти пользователя.")
-	ErrAuthWrongCredential = errors.New("Неверный адрес электронной почты или пароль")
+	ErrAuthCreation        = errors.New("failed to create user")
+	ErrAuthNotFound        = errors.New("user not found")
+	ErrAuthWrongCredential = errors.New("invalid email or password")
 )
 
-// AuthService предоставляет методы для работы с авторизацией пользователей.
+// AuthService provides methods for user authentication and registration.
 type AuthService struct {
 	Repo *repository.UserRepository
 }
@@ -29,24 +29,27 @@ func NewAuthService(repo *repository.UserRepository) *AuthService {
 	return &AuthService{Repo: repo}
 }
 
-// Registration регистрация нового пользователя.
+// Registration registers a new user.
 func (s *AuthService) Registration(ctx context.Context, name, email, password string, role models.Role, isBlocked bool) (*models.User, error) {
+	// Check if user with the given email already exists
 	exists, err := s.Repo.GetUserByEmail(ctx, email)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		logger.Error("Ошибка при поиске пользователя", zap.Error(err))
+		logger.Error("Error occurred while searching for user", zap.Error(err))
 		return nil, fmt.Errorf("%w: %v", ErrAuthNotFound, err)
 	}
 	if exists != nil {
-		logger.Warn("Пользователь с таким email уже зарегистрирован", zap.String("email", email))
-		return nil, fmt.Errorf("пользователь с email %s уже зарегистрирован", email)
+		logger.Warn("User with this email is already registered", zap.String("email", email))
+		return nil, fmt.Errorf("user with email %s is already registered", email)
 	}
 
+	// Hash the user's password
 	hashedPassword, err := models.Hash(password)
 	if err != nil {
-		logger.Error("Ошибка хеширования пароля", zap.Error(err))
-		return nil, fmt.Errorf("не удалось хешировать пароль: %w", err)
+		logger.Error("Error hashing password", zap.Error(err))
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
+	// Create a new user model
 	newUser := &models.User{
 		Name:      name,
 		Email:     email,
@@ -54,32 +57,36 @@ func (s *AuthService) Registration(ctx context.Context, name, email, password st
 		Role:      role,
 		IsBlocked: isBlocked,
 	}
+
+	// Save the new user in the database
 	user, err := s.Repo.CreateUser(ctx, newUser)
 	if err != nil {
-		logger.Error("Ошибка при создании нового пользователя", zap.Error(err))
+		logger.Error("Error creating new user", zap.Error(err))
 		return nil, fmt.Errorf("%w: %v", ErrAuthCreation, err)
 	}
-	logger.Info("Новый пользователь зарегистрирован", zap.String("email", newUser.Email))
+	logger.Info("New user successfully registered", zap.String("email", newUser.Email))
 	return user, nil
 }
 
-// Login авторизация существующего пользователя.
+// Login authenticates an existing user.
 func (s *AuthService) Login(ctx context.Context, email, password string, role models.Role) (*models.User, error) {
+	// Attempt to find user by email
 	exists, err := s.Repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			logger.Warn("Неверные учетные данные при входе", zap.String("email", email))
+			logger.Warn("Invalid login credentials", zap.String("email", email))
 			return nil, ErrAuthWrongCredential
 		}
-		logger.Error("Ошибка при поиске пользователя", zap.Error(err))
-		return nil, fmt.Errorf("ошибка при получении пользователя: %w", err)
+		logger.Error("Error retrieving user", zap.Error(err))
+		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
 
+	// Verify provided password against the stored hash
 	err = models.VerifyPassword(exists.Password, password)
 	if err != nil {
-		logger.Error("Ошибка при поиске пользователя", zap.Error(err))
+		logger.Error("Password verification failed", zap.Error(err))
 		return nil, ErrAuthWrongCredential
 	}
-	logger.Info("Пользователь успешно авторизован", zap.String("email", email))
+	logger.Info("User successfully logged in", zap.String("email", email))
 	return exists, nil
 }

@@ -67,40 +67,8 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.Handle("GET /admin/links/created/count", adminMiddleware(handler.GetTotalLinks()))
 
 	// Управление статистикой
-	router.HandleFunc("GET /admin/stats", handler.GetStats())
-	router.HandleFunc("GET /admin/stats/links", handler.GetAllLinksStats())
-}
-
-// GetStats метод для получения статистики.
-func (h *AdminHandler) GetStats() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		fromStr := r.URL.Query().Get("from")
-		from, err := time.Parse("2006-01-02", fromStr)
-		if err != nil {
-			logger.Error("Ошибка парсинга параметра 'from'", zap.String("from", fromStr), zap.Error(err))
-			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
-			return
-		}
-		toStr := r.URL.Query().Get("to")
-		to, err := time.Parse("2006-01-02", toStr)
-		if err != nil {
-			logger.Error("Ошибка парсинга параметра 'to'", zap.String("to", toStr), zap.Error(err))
-			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
-			return
-		}
-		by := r.URL.Query().Get("by")
-		if by != common.GroupByDay && by != common.GroupByMonth {
-			logger.Error("Неверное значение параметра 'by'", zap.String("by", by))
-			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
-			return
-		}
-		logger.Info("Получение статистики", zap.String("by", by), zap.Time("from", from), zap.Time("to", to))
-		stats := h.StatService.GetStats(ctx, by, from, to)
-		logger.Info("Статистика успешно получена", zap.Int("record_count", len(stats)))
-		res.JSON(w, stats, http.StatusOK)
-	}
+	router.Handle("GET /admin/stats", adminMiddleware(handler.GetClickedLinkStats()))
+	router.Handle("GET /admin/stats/links", adminMiddleware(handler.GetAllLinksStats()))
 }
 
 // GetUsers метод для получения списка пользователей.
@@ -399,6 +367,39 @@ func (a *AdminHandler) GetTotalLinks() http.HandlerFunc {
 	}
 }
 
+// GetClickedLinkStats метод для получения статистики по кликам ссылок.
+func (h *AdminHandler) GetClickedLinkStats() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		fromStr := r.URL.Query().Get("from")
+		from, err := time.Parse("2006-01-02", fromStr)
+		if err != nil {
+			logger.Error("Ошибка парсинга параметра 'from'", zap.String("from", fromStr), zap.Error(err))
+			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
+			return
+		}
+		toStr := r.URL.Query().Get("to")
+		to, err := time.Parse("2006-01-02", toStr)
+		if err != nil {
+			logger.Error("Ошибка парсинга параметра 'to'", zap.String("to", toStr), zap.Error(err))
+			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
+			return
+		}
+		by := r.URL.Query().Get("by")
+		if by != common.GroupByDay && by != common.GroupByMonth {
+			logger.Error("Неверное значение параметра 'by'", zap.String("by", by))
+			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
+			return
+		}
+		logger.Info("Получение статистики", zap.String("by", by), zap.Time("from", from), zap.Time("to", to))
+		stats := h.StatService.GetClickedLinkStats(ctx, by, from, to)
+		logger.Info("Статистика успешно получена", zap.Int("record_count", len(stats)))
+		res.JSON(w, stats, http.StatusOK)
+	}
+}
+
+// GetAllLinksStats метод для получения всей статистики по ссылкам.
 func (a *AdminHandler) GetAllLinksStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

@@ -20,14 +20,14 @@ func main() {
 
 	app, err := app.NewApp(cfg)
 	if err != nil {
-		logger.Error("Ошибка инициализации приложения: %v", zap.Error(err))
+		logger.Error("Application initialization error: %v", zap.Error(err))
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	if err := app.Run(ctx); err != nil {
-		logger.Error("Ошибка запуска сервера %v", zap.Error(err))
-		fmt.Printf("Ошибка запуска сервера %v", err)
+		logger.Error("Server startup error %v", zap.Error(err))
+		fmt.Printf("Server startup error %v", err)
 	}
 }

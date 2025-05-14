@@ -51,10 +51,10 @@ func (s *StatService) AddClick(ctx context.Context) {
 	}
 }
 
-// GetStats метод для получения статистики.
-func (s *StatService) GetStats(ctx context.Context, by string, from, to time.Time) []payload.GetStatsResponse {
+// GetClickedLinkStats метод для получения статистики.
+func (s *StatService) GetClickedLinkStats(ctx context.Context, by string, from, to time.Time) []payload.GetStatsResponse {
 	logger.Info("Запрос статистики", zap.String("by", by), zap.Time("from", from), zap.Time("to", to))
-	stats := s.Repo.GetStats(ctx, by, from, to)
+	stats := s.Repo.GetClickedLinkStats(ctx, by, from, to)
 	logger.Info("Статистика получена", zap.Int("count", len(stats)))
 	return stats
 }

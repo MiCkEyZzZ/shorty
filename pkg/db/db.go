@@ -11,31 +11,35 @@ import (
 	"shorty/pkg/logger"
 )
 
+// DB is a wrapper around gorm.DB
 type DB struct {
 	*gorm.DB
 }
 
+// NewDatabase initializes and returns a new database connection
 func NewDatabase(cfg *config.Config) (*DB, error) {
+	// Attempt to open a connection to the database using GORM and the provided DSN
 	db, err := gorm.Open(postgres.Open(cfg.Db.Dsn), &gorm.Config{})
 	if err != nil {
-		logger.Error("Ошибка подключения к базе данных", zap.Error(err))
-		return nil, fmt.Errorf("Ошибка подключения к БД: %w", err)
+		logger.Error("Failed to connect to the database", zap.Error(err))
+		return nil, fmt.Errorf("failed to connect to the database: %w", err)
 	}
 
-	// Проверка подключения к БД
+	// Retrieve the underlying sql.DB object to perform connection checks
 	sqlDB, err := db.DB()
 	if err != nil {
-		logger.Error("Ошибка при получении объекта базы данных для проверки состояния", zap.Error(err))
-		return nil, fmt.Errorf("не удалось получить доступ к объекту базы данных: %w", err)
+		logger.Error("Failed to obtain database object for connection check", zap.Error(err))
+		return nil, fmt.Errorf("unable to access database object: %w", err)
 	}
 
-	// Проверка состояния соединения с базой данных
+	// Ping the database to ensure the connection is alive
 	if err := sqlDB.Ping(); err != nil {
-		logger.Error("Не удалось подключиться к базе данных", zap.Error(err))
-		return nil, fmt.Errorf("не удалось установить соединение с БД: %w", err)
+		logger.Error("Database connection test failed", zap.Error(err))
+		return nil, fmt.Errorf("failed to establish a connection to the database: %w", err)
 	}
-	fmt.Println("Подключение к БД успешно!")
-	logger.Info("Подключение к БД успешно!")
+
+	fmt.Println("Successfully connected to the database!")
+	logger.Info("Successfully connected to the database")
 
 	return &DB{db}, nil
 }
