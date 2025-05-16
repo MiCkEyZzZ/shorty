@@ -19,7 +19,7 @@ import (
 	"shorty/pkg/res"
 )
 
-// AdminHandlerDeps - зависимости для создания экземпляра AdminHandler
+// AdminHandlerDeps holds the dependencies required to initialize an AdminHandler.
 type AdminHandlerDeps struct {
 	Config      *config.Config
 	UserService *service.UserService
@@ -28,7 +28,7 @@ type AdminHandlerDeps struct {
 	JWTService  *jwt.JWT
 }
 
-// AdminHandler - обработчик для управления администратором.
+// AdminHandler handles admin-related routes and operations.
 type AdminHandler struct {
 	Config      *config.Config
 	UserService *service.UserService
@@ -37,7 +37,7 @@ type AdminHandler struct {
 	JWTService  *jwt.JWT
 }
 
-// NewAdminHandler регистрирует маршруты, связанные с администратором, и привязывает их к методам AdminHandler.
+// NewAdminHandler registers admin-related routes and attaches them to AdminHandler methods.
 func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	handler := &AdminHandler{
 		Config:      deps.Config,
@@ -49,7 +49,7 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 
 	adminMiddleware := middleware.AdminMiddleware(deps.JWTService, deps.UserService)
 
-	// Управление пользователями.
+	// User management
 	router.Handle("GET /admin/users", adminMiddleware(handler.GetUsers()))
 	router.Handle("GET /admin/users/{id}", adminMiddleware(handler.GetUser()))
 	router.Handle("PATCH /admin/users/{id}", adminMiddleware(handler.UpdateUser()))
@@ -58,7 +58,7 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.Handle("PATCH /admin/users/{id}/unblock", adminMiddleware(handler.UnblockUser()))
 	router.Handle("GET /admin/users/blocked/count", adminMiddleware(handler.GetBlockedUsersCount()))
 
-	// Управление ссылками.
+	// Link management
 	router.Handle("PATCH /admin/links/{id}/block", adminMiddleware(handler.BlockLink()))
 	router.Handle("PATCH /admin/links/{id}/unblock", adminMiddleware(handler.UnblockLink()))
 	router.Handle("DELETE /admin/links/{id}", adminMiddleware(handler.DeleteLink()))
@@ -66,12 +66,12 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	router.Handle("GET /admin/links/deleted/count", adminMiddleware(handler.GetDeletedLinksCount()))
 	router.Handle("GET /admin/links/created/count", adminMiddleware(handler.GetTotalLinks()))
 
-	// Управление статистикой
+	// Statistics
 	router.Handle("GET /admin/stats", adminMiddleware(handler.GetClickedLinkStats()))
 	router.Handle("GET /admin/stats/links", adminMiddleware(handler.GetAllLinksStats()))
 }
 
-// GetUsers метод для получения списка пользователей.
+// GetUsers method to retrieve the list of users.
 func (a *AdminHandler) GetUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -87,80 +87,80 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 	}
 }
 
-// GetUser метод для получения пользователя по идентификатору.
+// GetUser method to retrieve a user by their ID.
 func (a *AdminHandler) GetUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		id := r.PathValue("id")
 		userID, err := strconv.Atoi(id)
 		if err != nil {
-			logger.Error("Некорректный идентификатор пользователя", zap.String("id", id), zap.Error(err))
+			logger.Error("Invalid user ID", zap.String("id", id), zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 		user, err := a.UserService.GetByID(ctx, uint(userID))
 		if err != nil {
-			logger.Error("Ошибка при поиска пользователя", zap.Int("userID", userID), zap.Error(err))
+			logger.Error("Error searching for user", zap.Int("userID", userID), zap.Error(err))
 			res.ERROR(w, common.ErrUserNotFound, http.StatusNotFound)
 			return
 		}
-		logger.Info("Пользователь найден", zap.Int("id", userID))
+		logger.Info("User found", zap.Int("id", userID))
 		res.JSON(w, user, http.StatusOK)
 	}
 }
 
-// UpdateUser метод для обновления пользователя по идентификатору.
+// UpdateUser method to update a user by their ID.
 func (a *AdminHandler) UpdateUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		id := r.PathValue("id")
 		userID, err := strconv.Atoi(id)
 		if err != nil {
-			logger.Error("Некорректный ID пользователя", zap.String("id", id), zap.Error(err))
+			logger.Error("Invalid user ID", zap.String("id", id), zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 		body, err := req.HandleBody[models.User](&w, r)
 		if err != nil {
-			logger.Error("Ошибка обработки тела запроса", zap.Error(err))
+			logger.Error("Error processing request body", zap.Error(err))
 			res.ERROR(w, common.ErrRequestBodyParse, http.StatusBadRequest)
 			return
 		}
 		body.ID = uint(userID)
 		updatedUser, err := a.UserService.Update(ctx, body)
 		if err != nil {
-			logger.Error("Ошибка обновления пользователя", zap.Int("userID", userID), zap.Error(err))
+			logger.Error("Error updating user", zap.Int("userID", userID), zap.Error(err))
 			res.ERROR(w, common.ErrUserUpdateFailed, http.StatusInternalServerError)
 			return
 		}
-		logger.Info("Пользователь успешно обновлён", zap.Int("userID", userID))
+		logger.Info("User successfully updated", zap.Int("userID", userID))
 		res.JSON(w, updatedUser, http.StatusOK)
 	}
 }
 
-// DeleteUser метод для удаления пользователя по идентификатору.
+// DeleteUser method to delete a user by their ID.
 func (a *AdminHandler) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		id := r.PathValue("id")
 		userID, err := strconv.Atoi(id)
 		if err != nil {
-			logger.Error("Некорректный ID пользователя", zap.String("id", id), zap.Error(err))
+			logger.Error("Invalid user ID", zap.String("id", id), zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 		err = a.UserService.Delete(ctx, uint(userID))
 		if err != nil {
-			logger.Error("Ошибка удаления пользователя", zap.Int("userID", userID), zap.Error(err))
+			logger.Error("Error deleting user", zap.Int("userID", userID), zap.Error(err))
 			res.ERROR(w, common.ErrUserDeleteFailed, http.StatusInternalServerError)
 			return
 		}
-		logger.Info("Пользователь успешно удалён", zap.Int("userID", userID))
-		res.JSON(w, map[string]string{"message": "Пользователь удалён"}, http.StatusOK)
+		logger.Info("User successfully deleted", zap.Int("userID", userID))
+		res.JSON(w, map[string]string{"message": "User deleted"}, http.StatusOK)
 	}
 }
 
-// BlockUser метод для блокировки пользователя по идентификатору.
+// BlockUser method to block a user by their ID.
 func (a *AdminHandler) BlockUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
