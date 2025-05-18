@@ -18,13 +18,13 @@ import (
 // AuthHandlerDeps - зависимости для обработчика аутентификации.
 type AuthHandlerDeps struct {
 	Config      *config.Config
-	AuthService *service.AuthService
+	AuthService service.AuthServ
 }
 
 // AuthHandler - обработчик аутентификации.
 type AuthHandler struct {
 	Config      *config.Config
-	AuthService *service.AuthService
+	AuthService service.AuthServ
 }
 
 // NewAuthHandler - создание обработчика аутентификации.

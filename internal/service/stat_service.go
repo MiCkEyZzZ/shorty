@@ -16,13 +16,13 @@ import (
 var ErrInvalidLinkID = errors.New("неверный идентификатор ссылки")
 
 type StatServiceDeps struct {
-	Repo     *repository.StatRepository
+	Repo     repository.StatRepo
 	EventBus *event.EventBus
 }
 
 // StatService предоставляет методы для работы с статистикой.
 type StatService struct {
-	Repo     *repository.StatRepository
+	Repo     repository.StatRepo
 	EventBus *event.EventBus
 }
 

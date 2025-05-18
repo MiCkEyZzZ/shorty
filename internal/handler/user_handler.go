@@ -24,16 +24,16 @@ import (
 // UserHandlerDeps - зависимости для создания экземпляра UserHandler
 type UserHandlerDeps struct {
 	Config      *config.Config
-	UserService *service.UserService
-	LinkService *service.LinkService
+	UserService service.UserServ
+	LinkService service.LinkServ
 	EventBus    *event.EventBus
 }
 
 // UserHandler - обработчик для управления пользователями.
 type UserHandler struct {
 	Config      *config.Config
-	UserService *service.UserService
-	LinkService *service.LinkService
+	UserService service.UserServ
+	LinkService service.LinkServ
 	EventBus    *event.EventBus
 }
 

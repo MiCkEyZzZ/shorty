@@ -22,11 +22,11 @@ var (
 
 // UserService предоставляет методы для работы с пользователем.
 type UserService struct {
-	Repo *repository.UserRepository
+	Repo repository.UserRepo
 }
 
 // NewUserService создаёт новый экземпляр UserService.
-func NewUserService(repo *repository.UserRepository) *UserService {
+func NewUserService(repo repository.UserRepo) *UserService {
 	return &UserService{Repo: repo}
 }
 

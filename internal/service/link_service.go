@@ -23,11 +23,11 @@ var (
 
 // LinkService предоставляет методы для работы с ссылками.
 type LinkService struct {
-	Repo *repository.LinkRepository
+	Repo repository.LinkRepo
 }
 
 // NewLinkService создаёт новый экземпляр LinkService
-func NewLinkService(repo *repository.LinkRepository) *LinkService {
+func NewLinkService(repo repository.LinkRepo) *LinkService {
 	return &LinkService{Repo: repo}
 }
 

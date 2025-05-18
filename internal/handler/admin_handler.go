@@ -22,18 +22,18 @@ import (
 // AdminHandlerDeps holds the dependencies required to initialize an AdminHandler.
 type AdminHandlerDeps struct {
 	Config      *config.Config
-	UserService *service.UserService
-	LinkService *service.LinkService
-	StatService *service.StatService
+	UserService service.UserServ
+	LinkService service.LinkServ
+	StatService service.StatServ
 	JWTService  *jwt.JWT
 }
 
 // AdminHandler handles admin-related routes and operations.
 type AdminHandler struct {
 	Config      *config.Config
-	UserService *service.UserService
-	LinkService *service.LinkService
-	StatService *service.StatService
+	UserService service.UserServ
+	LinkService service.LinkServ
+	StatService service.StatServ
 	JWTService  *jwt.JWT
 }
 

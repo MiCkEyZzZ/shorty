@@ -16,7 +16,7 @@ import (
 )
 
 // AdminMiddleware проверяет, является ли пользователь администратором.
-func AdminMiddleware(jwtService *jwt.JWT, userService *service.UserService) func(http.Handler) http.Handler {
+func AdminMiddleware(jwtService *jwt.JWT, userService service.UserServ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
