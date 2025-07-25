@@ -1,0 +1,28 @@
+{{ define "login" }}
+<div class="container-auth">
+    <h1 class="container-auth_title">Вход</h1>
+    <form id="signin-form" class="container-auth_form">
+        <div class="container-auth_form--enter">
+            <input
+                type="email"
+                name="email"
+                placeholder="email@domain.ru"
+                class="container-auth_form--input"
+                required
+            />
+            <input
+                type="password"
+                name="password"
+                placeholder="Пароль"
+                class="container-auth_form--input"
+                required
+            />
+            <select name="role" class="container-auth_form--input">
+                <option value="user">Пользователь</option>
+                <option value="admin">Админ</option>
+            </select>
+        </div>
+        <button type="submit" class="container-auth_form--btn">Войти</button>
+    </form>
+</div>
+{{ end }}

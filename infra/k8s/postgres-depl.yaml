@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shorty-postgres-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shorty-postgres
+  template:
+    metadata:
+      labels:
+        app: shorty-postgres
+    spec:
+      containers:
+        - name: shorty-postgres
+          image: postgres

@@ -29,7 +29,7 @@ func NewConfig() *Config {
 	// Загружаем .env (если есть)
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Предупреждение: файл .env не найден. Используются значения по умолчанию.")
+		fmt.Println("Warning: The .env file was not found. Default values are being used.")
 	}
 	return &Config{
 		Db: DbConfig{

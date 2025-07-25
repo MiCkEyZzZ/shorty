@@ -49,6 +49,16 @@ func NewServer(
 		EventBus:    eventBus,
 	})
 
+	// Статика
+	router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
+
+	// Обработчики страниц
+	pageH := handler.NewPageHandler(jwtService)
+	router.HandleFunc("/", pageH.HomePage)
+	router.HandleFunc("/signin", pageH.LoginPage)
+	router.HandleFunc("/signup", pageH.RegisterPage)
+	router.HandleFunc("/stats", pageH.StatsPage)
+
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: middleware(router),
@@ -61,14 +71,14 @@ func (s *Server) Start(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
 	go func() {
-		fmt.Printf("Сервер запущен на %s\n", s.httpServer.Addr)
+		fmt.Printf("The server is running on %s\n", s.httpServer.Addr)
 		fmt.Println()
 		errChan <- s.httpServer.ListenAndServe()
 	}()
 
 	select {
 	case <-ctx.Done():
-		logger.Info("Выключение сервера")
+		logger.Info("Shutting down the server")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		return s.httpServer.Shutdown(shutdownCtx)

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shorty-depl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shorty
+  template:
+    metadata:
+      labels:
+        app: shorty
+    spec:
+      container:
+        - name: shorty
+          image: mickeyzzz/shorty
+          env:
+            - name: POSTGRES_URI
+              value: "host=localhost user=shorty_user password=shorty_password dbname=shortydb port=5432 sslmode=disable"

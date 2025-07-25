@@ -5,6 +5,8 @@
 *.so
 *.dylib
 .env
+/cmd/.env
+doc
 
 # Test binary, built with `go test -c`
 *.test

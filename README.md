@@ -21,6 +21,10 @@ go run cmd/main.go
 - [postgresql](https://www.postgresql.org/)
 - [validator](https://github.com/go-playground/validator)
 - [godotenv](https://github.com/joho/godotenv)
+- [minikube](https://minikube.sigs.k8s.io/docs/)
+- [docker](https://www.docker.com/)
+- [gihub action](https://github.com/features/actions)
+- [keubernetes](https://kubernetes.io/)
 
 ## 📌 Features
 
@@ -57,6 +61,29 @@ go run cmd/main.go
 - [ ] Number of new links per day/week/month (admin only)
 - [ ] Average number of clicks per user (admin only)
 - [ ] Average lifespan of a link (time between creation and last click) (admin only)
+
+## Примеры запросов
+
+- **Авторизация пользователя:**
+
+```
+{
+  "name": "твоё имя",
+  "email": "твой адрес эл.почты",
+  "password": "test",
+  "role": "user" или "admin"
+}
+```
+
+- **Аутентификация пользователя:**
+
+```
+{
+  "email": "твой адрес эл.почты",
+  "password": "test",
+  "role": "user" или "admin"
+}
+```
 
 ## License
 

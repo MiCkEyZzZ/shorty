@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8" />
+        <title>{{ .Title }}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/static/css/style.css?v=1" />
+        <script src="/static/js/app.js" defer></script>
+    </head>
+    <body>
+        {{ template "header" . }}
+        <div class="container">
+            {{ if eq .Page "login" }} {{ template "login" . }} {{ else if eq
+            .Page "register" }} {{ template "register" . }} {{ else if eq .Page
+            "index" }} {{ template "index" . }} {{ else if eq .Page "stats" }}
+            {{ template "stats" . }} {{ end }}
+        </div>
+    </body>
+</html>

@@ -1,0 +1,15 @@
+apiVersion: skaffold/v3alpha1
+kind: Config
+deploy:
+  kubectl: {}
+manifests:
+  rawYaml:
+    - ./infra/k8s/*
+build:
+  local:
+    push: false
+  artifacts:
+    - image: mickeyzzz/shorty
+      context: shorty
+      docker:
+        dockerfile: Dockerfile

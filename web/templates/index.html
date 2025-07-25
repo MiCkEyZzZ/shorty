@@ -1,0 +1,14 @@
+{{ define "index" }}
+<div class="container_form">
+    <h1 class="container_form-title">Сократить URL-адрес</h1>
+    <form action="/shorten" method="POST" class="container_form-action">
+        <input
+            type="text"
+            name="url"
+            placeholder="Введите URL-адрес для сокращения"
+            class="container_form-input"
+        />
+        <button type="submit" class="container_form-btn">Сократить</button>
+    </form>
+</div>
+{{ end }}

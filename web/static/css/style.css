@@ -1,0 +1,194 @@
+html {
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+}
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: "Roboto", sans-serif;
+    margin: 0 !important;
+    padding: 0 10px 0 10px !important;
+    background-color: #16171d;
+    box-sizing: border-box;
+}
+.header {
+    position: fixed;
+    top: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    border-bottom: 1px solid #2e2d3d;
+}
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 980px;
+    height: 60px;
+}
+.header-logo {
+    width: auto;
+    height: auto;
+}
+.header-logo_txt {
+    font-size: 25px;
+    font-weight: 700;
+    color: #ffffff;
+    text-decoration: none;
+}
+.header-auth {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 230px;
+    height: 60px;
+}
+.header-auth_link--l {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    padding: 13px 23px 13px 23px;
+    color: #ffffff;
+    background-color: #2e2d3d;
+    border: 1px solid #4d5064;
+    text-decoration: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.header-auth_link--r {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    padding: 13px 23px 13px 23px;
+    color: #ffffff;
+    background-color: #6c38cc;
+    text-decoration: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.header-auth_link--l:hover {
+    background-color: #1e1f29;
+    border: 1px solid #4d5064;
+}
+.header-auth_link--r:hover {
+    background-color: #452481;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #fafafa;
+    background-color: #16171d;
+}
+.container_form {
+    width: 100%;
+    max-width: 450px;
+    padding: 30px;
+    background-color: #2e2d3d;
+    border-radius: 10px;
+}
+.container_form-title {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+.container_form-action {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+.container_form-input {
+    width: 100%;
+    max-width: 300px;
+    height: 38px;
+    padding: 6px 16px 6px;
+    margin-right: 15px;
+    color: #ffffff;
+    background-color: #1e1f29;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+}
+.container_form-btn {
+    font-size: 14px;
+    padding: 15px 40px;
+    color: #ffffff;
+    background-color: #6c38cc;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+.container_form-btn:hover {
+    background-color: #452481;
+}
+
+.container-auth {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 450px;
+    padding: 30px;
+    background-color: #2e2d3d;
+    border-radius: 10px;
+}
+.container-auth_title {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+.container-auth_form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+.container-auth_form--enter {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+.container-auth_form--input {
+    height: 38px;
+    padding: 6px 16px 6px 16px;
+    margin-bottom: 10px;
+    color: #ffffff;
+    background-color: #1e1f29;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+.container-auth_form--btn {
+    font-size: 14px;
+    padding: 15px 40px;
+    color: #ffffff;
+    background-color: #6c38cc;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+.container-auth_form--btn:hover {
+    background-color: #452481;
+}
+
+.container-stats {
+    width: 100%;
+    max-width: 900px;
+    height: 500px;
+    border: 1px solid #fafafa;
+}

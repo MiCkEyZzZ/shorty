@@ -1,0 +1,19 @@
+{{ define "header" }}
+<header class="header">
+    <div class="header-container">
+        <div class="header-logo">
+            <a href="/" class="header-logo_txt">Коротышка</a>
+        </div>
+        <div class="header-auth">
+            {{ if .IsAuthenticated }} {{ if eq .Role "admin" }}
+            <a href="/stats" class="header-auth_link--l">Статистика</a>
+            {{ end }}
+            <a href="/logout" class="header-auth_link--r">Выйти</a>
+            {{ else }}
+            <a href="/signin" class="header-auth_link--l">Войти</a>
+            <a href="/signup" class="header-auth_link--r">Регистрация</a>
+            {{ end }}
+        </div>
+    </div>
+</header>
+{{ end }}

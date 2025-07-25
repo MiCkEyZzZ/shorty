@@ -26,7 +26,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 	// Инициализация БД
 	db, err := db.NewDatabase(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось подключиться к базе данных: %w", err)
+		return nil, fmt.Errorf("Failed to connect to the database: %w", err)
 	}
 
 	// Создаём EventBus.
