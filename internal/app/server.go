@@ -25,7 +25,7 @@ func NewServer(
 	eventBus *event.EventBus,
 	linkService *service.LinkService,
 	statService *service.StatService,
-	userService *service.UserService,
+	userService service.UserServ,
 	jwtService *jwt.JWT,
 ) *Server {
 	router := http.NewServeMux()
@@ -58,6 +58,7 @@ func NewServer(
 	router.HandleFunc("/signin", pageH.LoginPage)
 	router.HandleFunc("/signup", pageH.RegisterPage)
 	router.HandleFunc("/stats", pageH.StatsPage)
+	router.HandleFunc("/settings", pageH.SettingsPage)
 
 	server := &http.Server{
 		Addr:    ":8080",

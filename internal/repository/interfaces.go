@@ -31,7 +31,7 @@ type StatRepo interface {
 
 type UserRepo interface {
 	CreateUser(ctx context.Context, user *models.User) (*models.User, error)
-	GetUsers(ctx context.Context) ([]*models.User, error)
+	GetUsers(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetUserByID(ctx context.Context, userID uint) (*models.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) (*models.User, error)

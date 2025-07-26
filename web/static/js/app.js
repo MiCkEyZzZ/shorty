@@ -28,6 +28,7 @@ function setupAuthButtons() {
     if (claims?.role === "admin") {
       authContainer.innerHTML = `
         <a href="/stats" class="header-auth_link--l">Статистика</a>
+        <a href="/settings" class="header-auth_link--l">Настройки</a>
         <a href="#" id="logout-btn" class="header-auth_link--r">Выйти</a>
       `;
     } else {

@@ -8,6 +8,7 @@
             {{ if .IsAuthenticated }} {{ if eq .Role "admin" }}
             <a href="/stats" class="header-auth_link--l">Статистика</a>
             {{ end }}
+            <a href="/settings" class="header-auth_link--l">Настройки</a>
             <a href="/logout" class="header-auth_link--r">Выйти</a>
             {{ else }}
             <a href="/signin" class="header-auth_link--l">Войти</a>

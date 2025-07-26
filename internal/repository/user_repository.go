@@ -35,13 +35,19 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) (*mo
 }
 
 // GetUsers метод для получения списка пользователей.
-func (r *UserRepository) GetUsers(ctx context.Context) ([]*models.User, error) {
+func (r *UserRepository) GetUsers(ctx context.Context, limit, offset int) ([]*models.User, error) {
 	var users []*models.User
-	res := r.Database.DB.WithContext(ctx).Find(&users)
+	res := r.Database.DB.
+		WithContext(ctx).
+		Limit(limit).
+		Offset(offset).
+		Find(&users)
+
 	if res.Error != nil {
 		logger.Error("Ошибка при получении списка пользователей", zap.Error(res.Error))
 		return nil, fmt.Errorf("ошибка при получении списка пользователей: %w", res.Error)
 	}
+
 	logger.Info("Получен список пользователей", zap.Int("usersCount", len(users)))
 	return users, nil
 }

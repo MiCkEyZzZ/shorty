@@ -29,7 +29,7 @@ type StatServ interface {
 }
 
 type UserServ interface {
-	GetAll(ctx context.Context) ([]*models.User, error)
+	GetAll(ctx context.Context, limit, offset int) ([]*models.User, error)
 	GetByID(ctx context.Context, userID uint) (*models.User, error)
 	Update(ctx context.Context, user *models.User) (*models.User, error)
 	Delete(ctx context.Context, userID uint) error

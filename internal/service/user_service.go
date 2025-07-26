@@ -31,8 +31,8 @@ func NewUserService(repo repository.UserRepo) *UserService {
 }
 
 // GetAll метод для получения списка пользователей.
-func (s *UserService) GetAll(ctx context.Context) ([]*models.User, error) {
-	users, err := s.Repo.GetUsers(ctx)
+func (s *UserService) GetAll(ctx context.Context, limit, offset int) ([]*models.User, error) {
+	users, err := s.Repo.GetUsers(ctx, limit, offset)
 	if err != nil {
 		logger.Error("Ошибка при получении списка пользователей", zap.Error(err))
 		return nil, fmt.Errorf("%w: %v", ErrUsersFound, err)

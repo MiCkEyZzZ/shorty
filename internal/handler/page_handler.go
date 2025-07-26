@@ -32,6 +32,7 @@ func (h *PageHandler) renderLayout(w http.ResponseWriter, data TemplateData) {
 		"web/templates/header.html",
 		"web/templates/index.html",
 		"web/templates/stats.html",
+		"web/templates/settings.html",
 		"web/templates/login.html",
 		"web/templates/register.html",
 	}
@@ -58,6 +59,13 @@ func (h *PageHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 	data := h.getAuthData(r)
 	data.Title = "Shorty"
 	data.Page = "index"
+	h.renderLayout(w, data)
+}
+
+func (h *PageHandler) SettingsPage(w http.ResponseWriter, r *http.Request) {
+	data := h.getAuthData(r)
+	data.Title = "Настройки"
+	data.Page = "settings"
 	h.renderLayout(w, data)
 }
 
