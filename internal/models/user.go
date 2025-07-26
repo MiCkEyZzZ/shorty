@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -15,12 +17,15 @@ const (
 
 // User represents the user entity.
 type User struct {
-	gorm.Model
-	Name      string
-	Email     string `gorm:"index"`
-	Password  string
-	Role      Role `json:"role"`
-	IsBlocked bool `json:"is_blocked" gorm:"default:false"`
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	Name      string         `json:"name"`
+	Email     string         `gorm:"index" json:"email"`
+	Password  string         `json:"password,omitempty"`
+	Role      Role           `json:"role"`
+	IsBlocked bool           `json:"is_blocked" gorm:"default:false"`
+	CreatedAt time.Time      `json:"createdAt"`
+	UpdatedAt time.Time      `json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deletedAt,omitempty"`
 }
 
 // Hash hashes the given password using bcrypt.
