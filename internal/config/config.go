@@ -22,7 +22,12 @@ type Config struct {
 	Db           DbConfig
 	Auth         AuthConfig
 	Env          string
+	DefaultPage  int
+	MaxLimit     int
+	DateFormat   string
 	DefaultLimit int
+	SchemeHTTP   string
+	SchemeHTTPS  string
 }
 
 // NewConfig создаёт новый экземпляр конфигурации.

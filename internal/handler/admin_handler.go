@@ -72,15 +72,14 @@ func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 }
 
 // GetUsers method to retrieve the list of users.
-func (a *AdminHandler) GetUsers() http.HandlerFunc {
+func (h *AdminHandler) GetUsers() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		// 1) limit
-		limit := a.Config.DefaultLimit
+		limit := h.Config.DefaultLimit
 		if limit <= 0 {
 			limit = 5
 		}
@@ -90,7 +89,6 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 			}
 		}
 
-		// 2) page
 		page := 1
 		if pStr := r.URL.Query().Get("page"); pStr != "" {
 			if p, err := strconv.Atoi(pStr); err == nil && p > 0 {
@@ -99,25 +97,22 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 		}
 		offset := (page - 1) * limit
 
-		// 3) данные
-		total, err := a.UserService.Count(r.Context())
+		total, err := h.UserService.Count(r.Context())
 		if err != nil {
 			res.ERROR(w, common.ErrorGetUsers, http.StatusInternalServerError)
 			return
 		}
-		users, err := a.UserService.GetAll(r.Context(), limit, offset)
+		users, err := h.UserService.GetAll(r.Context(), limit, offset)
 		if err != nil {
 			res.ERROR(w, common.ErrorGetUsers, http.StatusInternalServerError)
 			return
 		}
 
-		// 4) pages
 		totalPages := 1
 		if limit > 0 {
 			totalPages = int((total + int64(limit) - 1) / int64(limit))
 		}
 
-		// 5) next / prev с тремя аргументами
 		var next, prev interface{}
 		if page < totalPages {
 			next = makePageURL(r, page+1, totalPages)
@@ -126,7 +121,6 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 			prev = makePageURL(r, page-1, totalPages)
 		}
 
-		// 6) ответ
 		resp := map[string]interface{}{
 			"info": map[string]interface{}{
 				"count": total,
@@ -141,16 +135,16 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 }
 
 // GetUser method to retrieve a user by their ID.
-func (a *AdminHandler) GetUser() http.HandlerFunc {
+func (h *AdminHandler) GetUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		userID, err := a.parserIDFromPath(r)
+		userID, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("Invalid user ID", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
-		user, err := a.UserService.GetByID(ctx, uint(userID))
+		user, err := h.UserService.GetByID(ctx, uint(userID))
 		if err != nil {
 			logger.Error("Error searching for user", zap.Uint("userID", userID), zap.Error(err))
 			res.ERROR(w, common.ErrUserNotFound, http.StatusNotFound)
@@ -162,10 +156,10 @@ func (a *AdminHandler) GetUser() http.HandlerFunc {
 }
 
 // UpdateUser method to update a user by their ID.
-func (a *AdminHandler) UpdateUser() http.HandlerFunc {
+func (h *AdminHandler) UpdateUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		userID, err := a.parserIDFromPath(r)
+		userID, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("Invalid user ID", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
@@ -178,7 +172,7 @@ func (a *AdminHandler) UpdateUser() http.HandlerFunc {
 			return
 		}
 		body.ID = uint(userID)
-		updatedUser, err := a.UserService.Update(ctx, body)
+		updatedUser, err := h.UserService.Update(ctx, body)
 		if err != nil {
 			logger.Error("Error updating user", zap.Uint("userID", userID), zap.Error(err))
 			res.ERROR(w, common.ErrUserUpdateFailed, http.StatusInternalServerError)
@@ -190,16 +184,16 @@ func (a *AdminHandler) UpdateUser() http.HandlerFunc {
 }
 
 // DeleteUser method to delete a user by their ID.
-func (a *AdminHandler) DeleteUser() http.HandlerFunc {
+func (h *AdminHandler) DeleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		userID, err := a.parserIDFromPath(r)
+		userID, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("Invalid user ID", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
-		err = a.UserService.Delete(ctx, uint(userID))
+		err = h.UserService.Delete(ctx, uint(userID))
 		if err != nil {
 			logger.Error("Error deleting user", zap.Uint("userID", userID), zap.Error(err))
 			res.ERROR(w, common.ErrUserDeleteFailed, http.StatusInternalServerError)
@@ -211,23 +205,23 @@ func (a *AdminHandler) DeleteUser() http.HandlerFunc {
 }
 
 // BlockUser method to block a user by their ID.
-func (a *AdminHandler) BlockUser() http.HandlerFunc {
+func (h *AdminHandler) BlockUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		id, err := a.parserIDFromPath(r)
+		id, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("User ID parsing error", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
-		user, err := a.UserService.GetByID(ctx, uint(id))
+		user, err := h.UserService.GetByID(ctx, uint(id))
 		if err != nil {
 			logger.Error("Error when searching for a user", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrNotFound, http.StatusNotFound)
 			return
 		}
 
-		updateUser, err := a.UserService.Block(ctx, user.ID)
+		updateUser, err := h.UserService.Block(ctx, user.ID)
 		if err != nil {
 			logger.Error("Error when blocking the user", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrLinkBlockFailed, http.StatusInternalServerError)
@@ -240,23 +234,23 @@ func (a *AdminHandler) BlockUser() http.HandlerFunc {
 }
 
 // UnblockUser метод для разблокировки пользователя по идентификатору.
-func (a *AdminHandler) UnblockUser() http.HandlerFunc {
+func (h *AdminHandler) UnblockUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		id, err := a.parserIDFromPath(r)
+		id, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("User ID parsing error", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 
-		user, err := a.UserService.GetByID(ctx, uint(id))
+		user, err := h.UserService.GetByID(ctx, uint(id))
 		if err != nil {
 			logger.Error("Error when searching for a user", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrNotFound, http.StatusNotFound)
 			return
 		}
-		updatedUser, err := a.UserService.UnBlock(ctx, user.ID)
+		updatedUser, err := h.UserService.UnBlock(ctx, user.ID)
 		if err != nil {
 			logger.Error("Error when unblocking the user", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrUnBlockFailed, http.StatusInternalServerError)
@@ -269,10 +263,10 @@ func (a *AdminHandler) UnblockUser() http.HandlerFunc {
 }
 
 // BlockLink метод для блокировки ссылки.
-func (a *AdminHandler) BlockLink() http.HandlerFunc {
+func (h *AdminHandler) BlockLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		id, err := a.parserIDFromPath(r)
+		id, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("Link ID parsing error", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
@@ -280,7 +274,7 @@ func (a *AdminHandler) BlockLink() http.HandlerFunc {
 		}
 
 		// Получаем ссылку из базы
-		link, err := a.LinkService.FindByID(ctx, uint(id))
+		link, err := h.LinkService.FindByID(ctx, uint(id))
 		if err != nil {
 			logger.Error("Error when searching for a link", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrNotFound, http.StatusNotFound)
@@ -288,7 +282,7 @@ func (a *AdminHandler) BlockLink() http.HandlerFunc {
 		}
 
 		// Блокируем ссылку
-		updatedLink, err := a.LinkService.Block(ctx, link.ID)
+		updatedLink, err := h.LinkService.Block(ctx, link.ID)
 		if err != nil {
 			logger.Error("Error when blocking the link", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrLinkBlockFailed, http.StatusInternalServerError)
@@ -301,10 +295,10 @@ func (a *AdminHandler) BlockLink() http.HandlerFunc {
 }
 
 // UnblockLink метод для разблокировки ссылки.
-func (a *AdminHandler) UnblockLink() http.HandlerFunc {
+func (h *AdminHandler) UnblockLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		id, err := a.parserIDFromPath(r)
+		id, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("Link ID parsing error", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
@@ -312,7 +306,7 @@ func (a *AdminHandler) UnblockLink() http.HandlerFunc {
 		}
 
 		// Получаем ссылку из базы
-		link, err := a.LinkService.FindByID(ctx, uint(id))
+		link, err := h.LinkService.FindByID(ctx, uint(id))
 		if err != nil {
 			logger.Error("Error when searching for a link", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrNotFound, http.StatusNotFound)
@@ -320,7 +314,7 @@ func (a *AdminHandler) UnblockLink() http.HandlerFunc {
 		}
 
 		// Блокируем ссылку
-		updatedLink, err := a.LinkService.UnBlock(ctx, link.ID)
+		updatedLink, err := h.LinkService.UnBlock(ctx, link.ID)
 		if err != nil {
 			logger.Error("Error when unblocking the link", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrUnBlockFailed, http.StatusInternalServerError)
@@ -332,24 +326,24 @@ func (a *AdminHandler) UnblockLink() http.HandlerFunc {
 	}
 }
 
-func (a *AdminHandler) DeleteLink() http.HandlerFunc {
+func (h *AdminHandler) DeleteLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		id, err := a.parserIDFromPath(r)
+		id, err := h.parseIDFromPath(r)
 		if err != nil {
 			logger.Error("Invalid ID for deleting a link", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidID, http.StatusBadRequest)
 			return
 		}
 
-		_, err = a.LinkService.FindByID(ctx, uint(id))
+		_, err = h.LinkService.FindByID(ctx, uint(id))
 		if err != nil {
 			logger.Error("The link could not be found for deletion", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrLinkNotFound, http.StatusNotFound)
 			return
 		}
 
-		err = a.LinkService.Delete(ctx, uint(id))
+		err = h.LinkService.Delete(ctx, uint(id))
 		if err != nil {
 			logger.Error("Error when deleting a link", zap.Uint("id", uint(id)), zap.Error(err))
 			res.ERROR(w, common.ErrLinkDeleteFailed, http.StatusInternalServerError)
@@ -362,10 +356,10 @@ func (a *AdminHandler) DeleteLink() http.HandlerFunc {
 }
 
 // GetBlockedUsersCount метод для получения количества заблокированных пользователей.
-func (a *AdminHandler) GetBlockedUsersCount() http.HandlerFunc {
+func (h *AdminHandler) GetBlockedUsersCount() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		count, err := a.UserService.GetBlockedUsersCount(ctx)
+		count, err := h.UserService.GetBlockedUsersCount(ctx)
 		if err != nil {
 			logger.Error("Error when getting the number of blocked users", zap.Error(err))
 			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
@@ -376,10 +370,10 @@ func (a *AdminHandler) GetBlockedUsersCount() http.HandlerFunc {
 }
 
 // GetBlockedLinksCount метод для получения количества заблокированных ссылок.
-func (a *AdminHandler) GetBlockedLinksCount() http.HandlerFunc {
+func (h *AdminHandler) GetBlockedLinksCount() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		count, err := a.LinkService.GetBlockedLinksCount(ctx)
+		count, err := h.LinkService.GetBlockedLinksCount(ctx)
 		if err != nil {
 			logger.Error("Error when getting the number of blocked links", zap.Error(err))
 			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
@@ -390,30 +384,30 @@ func (a *AdminHandler) GetBlockedLinksCount() http.HandlerFunc {
 }
 
 // GetDeletedLinksCount метод для получения количества удалённых ссылок.
-func (a *AdminHandler) GetDeletedLinksCount() http.HandlerFunc {
+func (h *AdminHandler) GetDeletedLinksCount() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		count, err := a.LinkService.GetDeletedLinksCount(ctx)
+		count, err := h.LinkService.GetDeletedLinksCount(ctx)
 		if err != nil {
 			logger.Error("Error when receiving the number of deleted links", zap.Error(err))
 			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
 			return
 		}
-		res.JSON(w, map[string]int64{"deleted_links:": count}, http.StatusOK)
+		res.JSON(w, map[string]int64{"deleted_links": count}, http.StatusOK)
 	}
 }
 
 // GetTotalLinks метод для получения общего количества ссылок.
-func (a *AdminHandler) GetTotalLinks() http.HandlerFunc {
+func (h *AdminHandler) GetTotalLinks() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		count, err := a.LinkService.GetTotalLinks(ctx)
+		count, err := h.LinkService.GetTotalLinks(ctx)
 		if err != nil {
 			logger.Error("Error when getting the number of links created", zap.Error(err))
 			res.ERROR(w, common.ErrInternal, http.StatusInternalServerError)
 			return
 		}
-		res.JSON(w, map[string]int64{"created_links:": count}, http.StatusOK)
+		res.JSON(w, map[string]int64{"created_links": count}, http.StatusOK)
 	}
 }
 
@@ -422,26 +416,13 @@ func (h *AdminHandler) GetClickedLinkStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		fromStr := r.URL.Query().Get("from")
-		from, err := time.Parse("2006-01-02", fromStr)
+		from, to, by, err := h.parseStatParams(r)
 		if err != nil {
-			logger.Error("Error parsing the 'from' parameter", zap.String("from", fromStr), zap.Error(err))
+			logger.Error("Error parsing stat parameters", zap.Error(err))
 			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
-		toStr := r.URL.Query().Get("to")
-		to, err := time.Parse("2006-01-02", toStr)
-		if err != nil {
-			logger.Error("Error parsing the 'to' parameter", zap.String("to", toStr), zap.Error(err))
-			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
-			return
-		}
-		by := r.URL.Query().Get("by")
-		if by != common.GroupByDay && by != common.GroupByMonth {
-			logger.Error("Invalid value of the 'by' parameter", zap.String("by", by))
-			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
-			return
-		}
+
 		logger.Info("Getting statistics", zap.String("by", by), zap.Time("from", from), zap.Time("to", to))
 		stats := h.StatService.GetClickedLinkStats(ctx, by, from, to)
 		logger.Info("Statistics received successfully", zap.Int("record_count", len(stats)))
@@ -450,7 +431,7 @@ func (h *AdminHandler) GetClickedLinkStats() http.HandlerFunc {
 }
 
 // GetAllLinksStats метод для получения всей статистики по ссылкам.
-func (a *AdminHandler) GetAllLinksStats() http.HandlerFunc {
+func (h *AdminHandler) GetAllLinksStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		fromStr := r.URL.Query().Get("from")
@@ -466,18 +447,62 @@ func (a *AdminHandler) GetAllLinksStats() http.HandlerFunc {
 			res.ERROR(w, common.ErrInvalidParam, http.StatusBadRequest)
 			return
 		}
-		stats := a.StatService.GetAllLinksStats(ctx, from, to)
+		stats := h.StatService.GetAllLinksStats(ctx, from, to)
 		res.JSON(w, stats, http.StatusOK)
 	}
 }
 
-func (a *AdminHandler) parserIDFromPath(r *http.Request) (uint, error) {
+func (h *AdminHandler) parseIDFromPath(r *http.Request) (uint, error) {
 	id := r.PathValue("id")
 	userID, err := strconv.Atoi(id)
 	if err != nil {
 		return 0, fmt.Errorf("invalid ID format: %w", err)
 	}
 	return uint(userID), nil
+}
+
+func (h *AdminHandler) parseStatParams(r *http.Request) (from, to time.Time, by string, err error) {
+	fromStr := r.URL.Query().Get("from")
+	if fromStr == "" {
+		err = fmt.Errorf("'from' parameter is required")
+		return
+	}
+
+	toStr := r.URL.Query().Get("to")
+	if toStr == "" {
+		err = fmt.Errorf("'to' parameter is required")
+		return
+	}
+
+	by = r.URL.Query().Get("by")
+	if by == "" {
+		by = common.GroupByDay // default value
+	}
+
+	from, err = time.Parse("2006-01-02", fromStr)
+	if err != nil {
+		err = fmt.Errorf("invalid 'from' date format: %w", err)
+		return
+	}
+
+	to, err = time.Parse("2006-01-02", toStr)
+	if err != nil {
+		err = fmt.Errorf("invalid 'to' date format: %w", err)
+		return
+	}
+
+	if by != common.GroupByDay && by != common.GroupByMonth {
+		err = fmt.Errorf("invalid 'by' parameter, must be 'day' or 'month'")
+		return
+	}
+
+	// Проверяем, что from <= to
+	if from.After(to) {
+		err = fmt.Errorf("'from' date must be before or equal to 'to' date")
+		return
+	}
+
+	return from, to, by, nil
 }
 
 // getScheme пытается угадать схему (http/https) запроса.
@@ -500,9 +525,15 @@ func makePageURL(r *http.Request, page, totalPages int) interface{} {
 	q := u.Query()
 	q.Set("page", strconv.Itoa(page))
 	u.RawQuery = q.Encode()
+
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
 	}
+
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		scheme = proto
+	}
+
 	return fmt.Sprintf("%s://%s%s", scheme, r.Host, u.RequestURI())
 }
