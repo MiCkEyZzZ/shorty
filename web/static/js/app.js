@@ -38,7 +38,9 @@ function setupAuthButtons() {
     document.getElementById("logout-btn").onclick = (e) => {
       e.preventDefault();
       localStorage.removeItem("jwt");
-      window.location.href = "/signin";
+      document.cookie = `jwt=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+
+      window.location.href = "/";
     };
   } else {
     authContainer.innerHTML = `
@@ -71,7 +73,10 @@ function initSigninForm() {
         alert(json.error || "Ошибка авторизации");
         return;
       }
+      // 1) Сохраняем в localStorage
       localStorage.setItem("jwt", json.token);
+      // 2) Ставим cookie, чтобы сервер мог его прочесть
+      document.cookie = `jwt=${json.token}; Path=/; SameSite=Lax`;
       window.location.href = "/";
     } catch (err) {
       console.error(err);
@@ -105,7 +110,10 @@ function initSignupForm() {
         alert(json.error || "Ошибка регистрации");
         return;
       }
+      // 1) Сохраняем в localStorage
       localStorage.setItem("jwt", json.token);
+      // 2) Ставим cookie для сервера
+      document.cookie = `jwt=${json.token}; Path=/; SameSite=Lax`;
       window.location.href = "/";
     } catch (err) {
       console.error(err);
