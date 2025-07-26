@@ -40,4 +40,7 @@ type UserRepo interface {
 	GetBlockedUsersCount(ctx context.Context) (int64, error)
 	UnBlockUsers(ctx context.Context, user *models.User) (*models.User, error)
 	CountUsers(ctx context.Context) (int64, error)
+	GetUsersByStatus(ctx context.Context, isBlocked bool, limit, offset int) ([]*models.User, error)
+	UserExists(ctx context.Context, userID uint) (bool, error)
+	EmailExists(ctx context.Context, email string) (bool, error)
 }

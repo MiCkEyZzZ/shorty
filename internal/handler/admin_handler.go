@@ -233,7 +233,7 @@ func (h *AdminHandler) BlockUser() http.HandlerFunc {
 	}
 }
 
-// UnblockUser метод для разблокировки пользователя по идентификатору.
+// UnblockUser is a handler method that unblocks a user by their ID.
 func (h *AdminHandler) UnblockUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -262,7 +262,7 @@ func (h *AdminHandler) UnblockUser() http.HandlerFunc {
 	}
 }
 
-// BlockLink метод для блокировки ссылки.
+// BlockLink is a handler method that blocks a link by its ID.
 func (h *AdminHandler) BlockLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -294,7 +294,7 @@ func (h *AdminHandler) BlockLink() http.HandlerFunc {
 	}
 }
 
-// UnblockLink метод для разблокировки ссылки.
+// UnblockLink is a handler method that unblocks a link by its ID.
 func (h *AdminHandler) UnblockLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -326,6 +326,7 @@ func (h *AdminHandler) UnblockLink() http.HandlerFunc {
 	}
 }
 
+// DeleteLink handles deletion of a link by its ID.
 func (h *AdminHandler) DeleteLink() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -355,7 +356,7 @@ func (h *AdminHandler) DeleteLink() http.HandlerFunc {
 	}
 }
 
-// GetBlockedUsersCount метод для получения количества заблокированных пользователей.
+// GetBlockedUsersCount returns the total number of blocked users.
 func (h *AdminHandler) GetBlockedUsersCount() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -369,7 +370,7 @@ func (h *AdminHandler) GetBlockedUsersCount() http.HandlerFunc {
 	}
 }
 
-// GetBlockedLinksCount метод для получения количества заблокированных ссылок.
+// GetBlockedLinksCount returns the total number of blocked links.
 func (h *AdminHandler) GetBlockedLinksCount() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -383,7 +384,7 @@ func (h *AdminHandler) GetBlockedLinksCount() http.HandlerFunc {
 	}
 }
 
-// GetDeletedLinksCount метод для получения количества удалённых ссылок.
+// GetDeletedLinksCount returns the number of deleted links.
 func (h *AdminHandler) GetDeletedLinksCount() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -397,7 +398,7 @@ func (h *AdminHandler) GetDeletedLinksCount() http.HandlerFunc {
 	}
 }
 
-// GetTotalLinks метод для получения общего количества ссылок.
+// GetTotalLinks returns the total number of created links.
 func (h *AdminHandler) GetTotalLinks() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -411,7 +412,7 @@ func (h *AdminHandler) GetTotalLinks() http.HandlerFunc {
 	}
 }
 
-// GetClickedLinkStats метод для получения статистики по кликам ссылок.
+// GetClickedLinkStats returns statistics for link clicks, grouped by the specified interval (e.g., day, month).
 func (h *AdminHandler) GetClickedLinkStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -430,7 +431,7 @@ func (h *AdminHandler) GetClickedLinkStats() http.HandlerFunc {
 	}
 }
 
-// GetAllLinksStats метод для получения всей статистики по ссылкам.
+// GetAllLinksStats returns full statistics for links between two dates.
 func (h *AdminHandler) GetAllLinksStats() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -452,6 +453,7 @@ func (h *AdminHandler) GetAllLinksStats() http.HandlerFunc {
 	}
 }
 
+// parseIDFromPath parses the "id" path parameter from the request and returns it as uint.
 func (h *AdminHandler) parseIDFromPath(r *http.Request) (uint, error) {
 	id := r.PathValue("id")
 	userID, err := strconv.Atoi(id)
@@ -461,6 +463,8 @@ func (h *AdminHandler) parseIDFromPath(r *http.Request) (uint, error) {
 	return uint(userID), nil
 }
 
+// parseStatParams parses query parameters "from", "to", and "by" used for statistics requests.
+// Returns time range and grouping type (e.g., "day", "month").
 func (h *AdminHandler) parseStatParams(r *http.Request) (from, to time.Time, by string, err error) {
 	fromStr := r.URL.Query().Get("from")
 	if fromStr == "" {
@@ -476,7 +480,7 @@ func (h *AdminHandler) parseStatParams(r *http.Request) (from, to time.Time, by 
 
 	by = r.URL.Query().Get("by")
 	if by == "" {
-		by = common.GroupByDay // default value
+		by = common.GroupByDay
 	}
 
 	from, err = time.Parse("2006-01-02", fromStr)
@@ -496,7 +500,6 @@ func (h *AdminHandler) parseStatParams(r *http.Request) (from, to time.Time, by 
 		return
 	}
 
-	// Проверяем, что from <= to
 	if from.After(to) {
 		err = fmt.Errorf("'from' date must be before or equal to 'to' date")
 		return
@@ -505,7 +508,8 @@ func (h *AdminHandler) parseStatParams(r *http.Request) (from, to time.Time, by 
 	return from, to, by, nil
 }
 
-// getScheme пытается угадать схему (http/https) запроса.
+// getScheme attempts to determine the original request scheme (http or https),
+// taking into account reverse proxies.
 func getScheme(r *http.Request) string {
 	if r.TLS != nil {
 		return "https"
@@ -516,7 +520,8 @@ func getScheme(r *http.Request) string {
 	return "http"
 }
 
-// makePageURL строит URL с параметром page на основе исходного запроса.
+// makePageURL constructs a paginated URL for the given page and totalPages,
+// preserving other query parameters and request path.
 func makePageURL(r *http.Request, page, totalPages int) interface{} {
 	if page < 1 || page > totalPages {
 		return nil
