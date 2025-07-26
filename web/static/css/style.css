@@ -93,6 +93,7 @@ body {
     background-color: #16171d;
 }
 .container_form {
+    position: relative;
     width: 100%;
     max-width: 450px;
     padding: 30px;
@@ -191,4 +192,13 @@ body {
     max-width: 900px;
     height: 500px;
     border: 1px solid #fafafa;
+}
+
+.shorten-result {
+    position: absolute;
+    top: 250px;
+    color: #ffffff;
+}
+.shorten-result_link {
+    color: #ffffff;
 }

@@ -53,7 +53,7 @@ func NewServer(
 	router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
 	// Обработчики страниц
-	pageH := handler.NewPageHandler(jwtService)
+	pageH := handler.NewPageHandler(jwtService, linkService)
 	router.HandleFunc("/", pageH.HomePage)
 	router.HandleFunc("/signin", pageH.LoginPage)
 	router.HandleFunc("/signup", pageH.RegisterPage)

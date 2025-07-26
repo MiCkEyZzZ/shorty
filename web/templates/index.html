@@ -1,7 +1,8 @@
 {{ define "index" }}
 <div class="container_form">
     <h1 class="container_form-title">Сократить URL-адрес</h1>
-    <form action="/shorten" method="POST" class="container_form-action">
+    <!-- id изменён на shorten-form -->
+    <form id="shorten-form" class="container_form-action">
         <input
             type="text"
             name="url"
@@ -10,5 +11,7 @@
         />
         <button type="submit" class="container_form-btn">Сократить</button>
     </form>
+    <!-- сюда отрисуем короткую ссылку -->
+    <div id="short-url-result" class="shorten-result"></div>
 </div>
 {{ end }}

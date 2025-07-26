@@ -1,4 +1,4 @@
-// ======= Распарсить JWT из localStorage =======
+// ======= JWT парсинг из localStorage =======
 function parseJwt(token) {
   try {
     const payload = token.split(".")[1];
@@ -12,12 +12,12 @@ function parseJwt(token) {
       ),
     );
   } catch (e) {
-    console.error("[parseJwt] invalid token", e);
+    console.error("[parseJwt] Invalid token", e);
     return null;
   }
 }
 
-// ======= Шапка: Войти/Регистрация или Статистика/Выйти =======
+// ======= Отображение кнопок в шапке =======
 function setupAuthButtons() {
   const authContainer = document.querySelector(".header-auth");
   if (!authContainer) return;
@@ -48,7 +48,7 @@ function setupAuthButtons() {
   }
 }
 
-// ======= Логин: обрабатывать форму, если она есть =======
+// ======= Обработка формы входа =======
 function initSigninForm() {
   const form = document.getElementById("signin-form");
   if (!form) return;
@@ -80,7 +80,7 @@ function initSigninForm() {
   });
 }
 
-// ======= Регистрация: обрабатывать форму, если она есть =======
+// ======= Обработка формы регистрации =======
 function initSignupForm() {
   const form = document.getElementById("signup-form");
   if (!form) return;
@@ -114,37 +114,59 @@ function initSignupForm() {
   });
 }
 
-// ======= Сокращение URL: обрабатывать форму на главной =======
+// ======= Обработка формы сокращения ссылки =======
 function initShortenForm() {
-  const form = document.querySelector(".container_form-action");
-  if (!form) return;
+  const form = document.getElementById("shorten-form");
+  const result = document.getElementById("short-url-result");
+  if (!form || !result) return;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const urlValue = form.url.value;
+    const urlValue = form.url.value.trim();
+    if (!urlValue) return;
+
+    result.textContent = "Сокращаем…";
+
     try {
-      const res = await fetch("/shorten", {
+      const token = localStorage.getItem("jwt");
+      const res = await fetch("/users/links", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("jwt"),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ url: urlValue }),
       });
       const json = await res.json();
       if (!res.ok) {
-        alert(json.error || "Ошибка сокращения");
+        result.textContent = json.error || "Ошибка";
         return;
       }
-      alert("Короткая ссылка: " + json.short_url);
+
+      const hash = json.hash;
+      const shortLink = `/${hash}`;
+
+      // Очищаем контейнер
+      result.textContent = "Короткая ссылка: ";
+
+      // Создаём <a> через DOM API
+      const a = document.createElement("a");
+      a.href = shortLink;
+      a.target = "_blank";
+      a.classList.add("shorten-result_link");
+      a.textContent = shortLink;
+
+      result.appendChild(a);
+
+      form.url.value = "";
     } catch (err) {
       console.error(err);
-      alert("Сетевая ошибка");
+      result.textContent = "Сетевая ошибка";
     }
   });
 }
 
-// ======= Запуск всех функций после загрузки страницы =======
+// ======= Запуск после загрузки =======
 document.addEventListener("DOMContentLoaded", () => {
   setupAuthButtons();
   initSigninForm();

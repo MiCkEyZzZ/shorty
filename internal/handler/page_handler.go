@@ -1,10 +1,11 @@
-// internal/handler/page_handler.go
 package handler
 
 import (
 	"html/template"
 	"net/http"
+	"strings"
 
+	"shorty/internal/service"
 	"shorty/pkg/jwt"
 )
 
@@ -16,11 +17,12 @@ type TemplateData struct {
 }
 
 type PageHandler struct {
-	jwtService *jwt.JWT
+	jwtService  *jwt.JWT
+	linkService service.LinkServ
 }
 
-func NewPageHandler(jwtSvc *jwt.JWT) *PageHandler {
-	return &PageHandler{jwtService: jwtSvc}
+func NewPageHandler(jwtSvc *jwt.JWT, linkSvc service.LinkServ) *PageHandler {
+	return &PageHandler{jwtService: jwtSvc, linkService: linkSvc}
 }
 
 func (h *PageHandler) renderLayout(w http.ResponseWriter, data TemplateData) {
@@ -41,6 +43,18 @@ func (h *PageHandler) renderLayout(w http.ResponseWriter, data TemplateData) {
 }
 
 func (h *PageHandler) HomePage(w http.ResponseWriter, r *http.Request) {
+	// Если путь не ровно "/", пробуем редирект по хешу
+	if r.URL.Path != "/" {
+		hash := strings.TrimPrefix(r.URL.Path, "/")
+		if link, err := h.linkService.GetByHash(r.Context(), hash); err == nil {
+			http.Redirect(w, r, link.Url, http.StatusFound)
+			return
+		}
+		http.NotFound(w, r)
+		return
+	}
+
+	// Иначе — рендерим главную страницу
 	data := h.getAuthData(r)
 	data.Title = "Shorty"
 	data.Page = "index"
