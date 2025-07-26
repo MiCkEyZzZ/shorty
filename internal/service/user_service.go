@@ -125,3 +125,8 @@ func (s *UserService) GetBlockedUsersCount(ctx context.Context) (int64, error) {
 	logger.Info("Количество заблокированных пользователей получено", zap.Int64("count", count))
 	return count, nil
 }
+
+// Count возвращает общее количество пользователей.
+func (s *UserService) Count(ctx context.Context) (int64, error) {
+	return s.Repo.CountUsers(ctx)
+}

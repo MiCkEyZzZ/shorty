@@ -167,3 +167,13 @@ func (r *UserRepository) GetBlockedUsersCount(ctx context.Context) (int64, error
 	}
 	return count, nil
 }
+
+// CountUsers возвращает общее количество пользователей в БД.
+func (r *UserRepository) CountUsers(ctx context.Context) (int64, error) {
+	var cnt int64
+	if err := r.Database.DB.WithContext(ctx).Model(&models.User{}).Count(&cnt).Error; err != nil {
+		logger.Error("Ошибка подсчёта пользователей", zap.Error(err))
+		return 0, fmt.Errorf("ошибка подсчёта пользователей: %w", err)
+	}
+	return cnt, nil
+}

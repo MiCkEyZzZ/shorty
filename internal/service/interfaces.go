@@ -36,6 +36,7 @@ type UserServ interface {
 	Block(ctx context.Context, userID uint) (*models.User, error)
 	UnBlock(ctx context.Context, userID uint) (*models.User, error)
 	GetBlockedUsersCount(ctx context.Context) (int64, error)
+	Count(ctx context.Context) (int64, error)
 }
 
 type AuthServ interface {

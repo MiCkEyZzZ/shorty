@@ -37,11 +37,6 @@ type AdminHandler struct {
 	JWTService  *jwt.JWT
 }
 
-type PaginationRequest struct {
-	Limit int `json:"limit" validate:"min=1,max=100"`
-	Page  int `json:"page" validate:"min=1"`
-}
-
 // NewAdminHandler registers admin-related routes and attaches them to AdminHandler methods.
 func NewAdminHandler(router *http.ServeMux, deps AdminHandlerDeps) {
 	handler := &AdminHandler{
@@ -84,40 +79,64 @@ func (a *AdminHandler) GetUsers() http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-		// парсинг лимита/страницы
-		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-		if err != nil || limit <= 0 {
-			limit = 10
+		// 1) limit
+		limit := a.Config.DefaultLimit
+		if limit <= 0 {
+			limit = 5
 		}
-		page, err := strconv.Atoi(r.URL.Query().Get("page"))
-		if err != nil || page <= 0 {
-			page = 1
+		if lStr := r.URL.Query().Get("limit"); lStr != "" {
+			if l, err := strconv.Atoi(lStr); err == nil && l > 0 {
+				limit = l
+			}
+		}
+
+		// 2) page
+		page := 1
+		if pStr := r.URL.Query().Get("page"); pStr != "" {
+			if p, err := strconv.Atoi(pStr); err == nil && p > 0 {
+				page = p
+			}
 		}
 		offset := (page - 1) * limit
 
-		// проверяем ошибку!
-		users, err := a.UserService.GetAll(ctx, limit, offset)
+		// 3) данные
+		total, err := a.UserService.Count(r.Context())
 		if err != nil {
-			logger.Error("Error getting list of users", zap.Error(err))
+			res.ERROR(w, common.ErrorGetUsers, http.StatusInternalServerError)
+			return
+		}
+		users, err := a.UserService.GetAll(r.Context(), limit, offset)
+		if err != nil {
 			res.ERROR(w, common.ErrorGetUsers, http.StatusInternalServerError)
 			return
 		}
 
-		response := map[string]interface{}{
-			"users": users,
-			"pagination": map[string]interface{}{
-				"limit": limit,
-				"page":  page,
-			},
+		// 4) pages
+		totalPages := 1
+		if limit > 0 {
+			totalPages = int((total + int64(limit) - 1) / int64(limit))
 		}
 
-		logger.Info("User list successfully received.",
-			zap.Int("count", len(users)),
-			zap.Int("limit", limit),
-			zap.Int("page", page),
-		)
-		res.JSON(w, response, http.StatusOK)
+		// 5) next / prev с тремя аргументами
+		var next, prev interface{}
+		if page < totalPages {
+			next = makePageURL(r, page+1, totalPages)
+		}
+		if page > 1 {
+			prev = makePageURL(r, page-1, totalPages)
+		}
+
+		// 6) ответ
+		resp := map[string]interface{}{
+			"info": map[string]interface{}{
+				"count": total,
+				"pages": totalPages,
+				"next":  next,
+				"prev":  prev,
+			},
+			"results": users,
+		}
+		res.JSON(w, resp, http.StatusOK)
 	}
 }
 
@@ -459,4 +478,31 @@ func (a *AdminHandler) parserIDFromPath(r *http.Request) (uint, error) {
 		return 0, fmt.Errorf("invalid ID format: %w", err)
 	}
 	return uint(userID), nil
+}
+
+// getScheme пытается угадать схему (http/https) запроса.
+func getScheme(r *http.Request) string {
+	if r.TLS != nil {
+		return "https"
+	}
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		return proto
+	}
+	return "http"
+}
+
+// makePageURL строит URL с параметром page на основе исходного запроса.
+func makePageURL(r *http.Request, page, totalPages int) interface{} {
+	if page < 1 || page > totalPages {
+		return nil
+	}
+	u := *r.URL
+	q := u.Query()
+	q.Set("page", strconv.Itoa(page))
+	u.RawQuery = q.Encode()
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	return fmt.Sprintf("%s://%s%s", scheme, r.Host, u.RequestURI())
 }

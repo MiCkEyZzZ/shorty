@@ -19,9 +19,10 @@ type AuthConfig struct {
 
 // Config представляет конфигурацию приложения.
 type Config struct {
-	Db   DbConfig
-	Auth AuthConfig
-	Env  string
+	Db           DbConfig
+	Auth         AuthConfig
+	Env          string
+	DefaultLimit int
 }
 
 // NewConfig создаёт новый экземпляр конфигурации.

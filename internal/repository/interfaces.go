@@ -39,4 +39,5 @@ type UserRepo interface {
 	BlockUsers(ctx context.Context, user *models.User) (*models.User, error)
 	GetBlockedUsersCount(ctx context.Context) (int64, error)
 	UnBlockUsers(ctx context.Context, user *models.User) (*models.User, error)
+	CountUsers(ctx context.Context) (int64, error)
 }
